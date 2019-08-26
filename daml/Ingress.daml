@@ -1,0 +1,20 @@
+daml 1.2
+
+module Ingress where
+
+import Com.Banking.Bank.Service qualified as Bank
+
+template Ingress
+  with
+    operator: Party
+  where
+    signatory operator
+
+    controller operator can
+      nonconsuming CreateBank : Bank.BankCreated
+        with msg: Bank.CreateBank
+        do Bank.createBank msg
+
+      nonconsuming DeleteBank : Bank.BankDeleted
+        with msg: Bank.DeleteBank
+        do Bank.deleteBank msg

@@ -1,0 +1,17 @@
+daml 1.2
+
+module Com.Banking.Bank.Model where
+
+type T = Bank
+type K = Text
+type C = ContractId Bank
+
+template Bank
+  with
+    owner: Party
+    name: Text
+    bic: K
+  where
+    signatory owner
+    key (owner, bic): (Party, K)
+    maintainer key._1

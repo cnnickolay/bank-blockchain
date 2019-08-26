@@ -1,0 +1,14 @@
+sdk-version: 0.13.20
+name: bank
+source: daml/Main.daml
+scenario: Main:setup
+parties:
+  - bank
+  - nik
+  - vero
+version: 1.0.0
+exposed-modules:
+  - Main
+dependencies:
+  - daml-prim
+  - daml-stdlib

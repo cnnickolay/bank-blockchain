@@ -1,0 +1,18 @@
+daml 1.2
+
+module Com.Banking.Bank.Service where
+
+import Com.Banking.Bank.Model qualified as Bank
+
+data CreateBank = CreateBank with owner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
+data DeleteBank = DeleteBank with owner: Party, bic: Bank.K deriving (Eq, Show)
+
+data BankCreated = BankCreated Bank.T
+data BankDeleted = BankDeleted Bank.T
+
+createBank CreateBank {owner, name, bic} = BankCreated <$> (create Bank.Bank with owner, name, bic >>= fetch)
+
+deleteBank DeleteBank {owner, bic} = do
+    (bankCId, bank) <- fetchByKey @Bank.Bank (owner, bic)
+    archive bankCId
+    pure $ BankDeleted bank

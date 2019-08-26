@@ -1,0 +1,11 @@
+**/dist
+**/*.log
+**/target
+.idea
+.interfaces
+.package-database
+.project
+.settings
+.classpath
+.daml
+**/*.iml

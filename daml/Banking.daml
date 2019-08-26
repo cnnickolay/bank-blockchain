@@ -1,0 +1,78 @@
+daml 1.2
+
+module Banking where
+
+template Bank
+  with
+    owner: Party
+    name: Text
+  where
+    signatory owner
+
+    controller owner can
+      nonconsuming BankCreateAccount : (ContractId Account, Account)
+        with
+          accountHolderParty: Party
+          accountNumber: Text
+          accountName: Text
+          amount: Decimal
+        do
+          let account = Account with ownerBank = owner, amount, availableAmount = amount, accountNumber, accountName, accountHolderParty
+          cId <- create account
+          pure (cId, account)
+
+      nonconsuming FindAccount : Account
+        with
+          accountNumber: AccountId
+        do snd <$> fetchByKey @Account (owner, accountNumber)
+
+type AccountId = Text
+
+template Account
+  with
+    ownerBank: Party
+    accountHolderParty: Party
+    accountNumber: AccountId
+    accountName: Text
+    amount: Decimal
+    availableAmount: Decimal
+  where
+    signatory ownerBank
+
+    key (ownerBank, accountNumber): (Party, AccountId)
+    maintainer key._1
+
+    controller accountHolderParty can
+      nonconsuming CreateTransferOrder : (ContractId TransferOrder)
+        with
+          amountToTransfer: Decimal
+          destinationAccountNumber: AccountId
+        do
+          assertMsg "Destination account should be different from source account" $ accountNumber /= destinationAccountNumber
+          archive self *> create this with availableAmount = availableAmount - amountToTransfer
+          create TransferOrder with
+            bank = ownerBank
+            originator = accountHolderParty
+            fromAccount = accountNumber
+            toAccount = destinationAccountNumber
+            transferAmount = amountToTransfer
+
+template TransferOrder
+  with
+    bank: Party
+    originator: Party
+    fromAccount: AccountId
+    toAccount: AccountId
+    transferAmount: Decimal
+  where
+    signatory bank
+
+    controller bank can
+      ExecuteTransferOrder : ()
+        do
+          (fromAccountId, fromAccount) <- fetchByKey @Account (bank, fromAccount)
+          (toAccountId, toAccount)     <- fetchByKey @Account (bank, toAccount)
+          assertMsg "Not enough funds to make transfer" $ fromAccount.amount > transferAmount
+          archive fromAccountId *> create fromAccount with amount = fromAccount.amount - transferAmount
+          archive toAccountId *> create toAccount with amount = toAccount.amount + transferAmount
+          pure ()

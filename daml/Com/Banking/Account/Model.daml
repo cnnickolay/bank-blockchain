@@ -1,0 +1,21 @@
+daml 1.2
+
+module Com.Banking.Account.Model where
+
+import Com.Banking.Bank.Model qualified as Bank
+
+type T = Account
+type K = (Text, Bank.K)
+type C = ContractId Account
+
+template Account
+  with
+    owner: Party
+    name: Text
+    accountNumber: Text
+    initialAmount: Decimal
+    bankId: Bank.K
+  where
+    signatory owner
+    key (owner, (accountNumber, bankId)) : (Party, K)
+    maintainer key._1

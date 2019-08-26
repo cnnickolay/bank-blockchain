@@ -1,0 +1,42 @@
+daml 1.2
+
+module Tests.BankingSpec where
+
+import Banking
+
+test1 = scenario do
+  bank <- getParty "bank"
+  nik <- getParty "nik"
+  vero <- getParty "vero"
+  (nikAccountId, veroAccountId, bankId) <- submit bank do
+    bankId <- create Bank with owner = bank, name = "Citi", initialAmount = 1000.0
+    (nikAccountId, _) <- exercise bankId BankCreateAccount with accountHolderParty = nik, accountNumber = "1111", accountName = "Nik", amount = 100.0
+    (veroAccountId, _) <- exercise bankId BankCreateAccount with accountHolderParty = vero, accountNumber = "2222", accountName = "Vero", amount = 0.0
+    pure (nikAccountId, veroAccountId, bankId)
+
+  transferOrderId1 <- submit nik do
+    exercise nikAccountId CreateTransferOrder with
+      amountToTransfer = 10.0
+      destinationAccountNumber = "2222"
+  transferOrderId2 <- submit vero do
+    exercise veroAccountId CreateTransferOrder with
+      amountToTransfer = 3.0
+      destinationAccountNumber = "1111"
+  notEnoughFundsOrder <- submit vero do
+    exercise veroAccountId CreateTransferOrder with
+      amountToTransfer = 300.0
+      destinationAccountNumber = "1111"
+
+  submitMustFail vero do
+    exercise veroAccountId CreateTransferOrder with
+      amountToTransfer = 3.0
+      destinationAccountNumber = "2222"
+
+  submit bank do
+    exercise transferOrderId1 ExecuteTransferOrder
+    exercise transferOrderId2 ExecuteTransferOrder
+
+  submitMustFail bank do
+    exercise notEnoughFundsOrder ExecuteTransferOrder
+
+  pure ()
