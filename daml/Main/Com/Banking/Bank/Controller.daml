@@ -1,0 +1,16 @@
+daml 1.2
+
+module Main.Com.Banking.Bank.Controller where
+
+import Main.Com.Banking.Account.Service qualified as Account
+
+template Controller
+  with
+    owner: Party
+  where
+    signatory owner
+
+    controller owner can
+      nonconsuming CreateAccount : Account.CreatedAccount
+        with command : Account.AccountCreate
+        do Account.createAccount command

@@ -18,3 +18,5 @@ deleteBank DeleteBank {owner, bic} = do
     (bankCId, bank) <- fetchByKey @Bank.Bank (owner, bic)
     archive bankCId
     pure $ BankDeleted bank
+
+

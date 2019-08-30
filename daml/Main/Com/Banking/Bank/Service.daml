@@ -13,6 +13,7 @@ data BankDeleted = BankDeleted Bank.T
 createBank : CreateBank -> Update BankCreated
 createBank CreateBank {owner, name, bic} = BankCreated <$> (create Bank.Bank with owner, name, bic >>= fetch)
 
+deleteBank : DeleteBank -> Update BankDeleted
 deleteBank DeleteBank {owner, bic} = do
     (bankCId, bank) <- fetchByKey @Bank.Bank (owner, bic)
     archive bankCId

@@ -1,6 +1,6 @@
 daml 1.2
 
-module Main.Com.Banking.Computation where
+module Main.Com.Banking.Utils.Computation where
 
 import DA.Text
 import DA.List

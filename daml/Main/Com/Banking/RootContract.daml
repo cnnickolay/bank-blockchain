@@ -1,10 +1,10 @@
 daml 1.2
 
-module Ingress where
+module Main.Com.Banking.RootContract where
 
 import Com.Banking.Bank.Service qualified as Bank
 
-template Ingress
+template RootContract
   with
     operator: Party
   where

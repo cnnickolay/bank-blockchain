@@ -1,0 +1,19 @@
+daml 1.2
+
+module Main.Com.Banking.Account.Service where
+
+import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.Bank.Model qualified as Bank
+
+data AccountCreate = AccountCreate with
+    owner: Party
+    name: Text
+    accountNumber: Text
+    amount: Decimal
+    bankId: Bank.K
+  deriving (Eq, Show)
+
+data CreatedAccount = CreatedAccount Account.T deriving Eq
+
+createAccount : AccountCreate -> Update CreatedAccount
+createAccount = const $ abort ""
