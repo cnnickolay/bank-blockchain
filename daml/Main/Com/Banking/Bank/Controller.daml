@@ -3,10 +3,12 @@ daml 1.2
 module Main.Com.Banking.Bank.Controller where
 
 import Main.Com.Banking.Account.Service qualified as Account
+import Main.Com.Banking.Bank.Model qualified as Bank
 
 template Controller
   with
     owner: Party
+    bankId: Bank.K
   where
     signatory owner
 
