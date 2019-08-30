@@ -1,6 +1,6 @@
 daml 1.2
 
-module Com.Banking.Bank.Model where
+module Main.Com.Banking.Bank.Model where
 
 type T = Bank
 type K = Text

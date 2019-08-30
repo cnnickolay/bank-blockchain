@@ -1,0 +1,27 @@
+daml 1.2
+
+module Main.Com.Banking.Computation where
+
+import DA.Text
+import DA.List
+
+data Computation a = Result a | Failure [Text] deriving Eq
+
+instance Functor Computation where
+    fmap f (Result a) = Result $ f a
+    fmap f (Failure t) = Failure t
+
+instance Applicative Computation where
+    pure a = Result a
+    (Result f) <*> (Result a) = Result $ f a
+    (Failure fail) <*> (Result a) = Failure fail
+    (Failure fail) <*> (Failure fail') = Failure $ fail ++ fail'
+    (Result f) <*> (Failure fail) = Failure fail
+
+instance Action Computation where
+    (Result a) >>= f = f a
+    (Failure f) >>= _ = Failure f
+
+run : Computation a -> Update a
+run (Result a) = pure a
+run (Failure txt) = abort $ implode $ intersperse ", " txt

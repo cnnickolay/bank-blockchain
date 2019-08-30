@@ -1,8 +1,8 @@
 daml 1.2
 
-module Com.Banking.Account.Model where
+module Main.Com.Banking.Account.Model where
 
-import Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Bank.Model qualified as Bank
 
 type T = Account
 type K = (Text, Bank.K)
