@@ -22,6 +22,7 @@ findTest = do
             actual <- submit party do f
             assert $ actual == expectation
 
+    -- |||| Testing index 1
     -- Index is empty
     run None $ find_ party myKey1
 
@@ -36,7 +37,24 @@ findTest = do
     -- Adding another key to an existing index
     run () $ void $ storeInIndex party myKey1 "22"
     run (Some ["11", "22"]) $ find_ party myKey1
+    --------------------------------------------
+
+    -- |||| Testing index 2
+    -- Index is empty
+    run None $ find_ party myKey2
+
+    -- Adding an element to an empty index
+    run () $ void $ storeInIndex party myKey2 "11"
+    run (Some ["11"]) $ find_ party myKey2
+
+    -- Adding same key won't change index
+    run () $ void $ storeInIndex party myKey2 "11"
+    run (Some ["11"]) $ find_ party myKey2
+
+    -- Adding another key to an existing index
+    run () $ void $ storeInIndex party myKey2 "22"
+    run (Some ["11", "22"]) $ find_ party myKey2
+    --------------------------------------------
 
 find_ : Party -> Text -> Update (Optional [Text])
 find_ party a = fmap thd3 <$> findInIndex party a
-
