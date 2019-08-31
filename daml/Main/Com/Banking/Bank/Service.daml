@@ -36,7 +36,7 @@ deleteBank creator DeleteBank{bankOwner, bic} = do
     (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
     controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
     archive bankCId >> archive controllerId
-    Index.dropFromIndex creator indexName "bic"
+    Index.dropFromIndex creator indexName bic
     pure $ BankDeleted bank
 
 getAllBanks : Party -> Update [Bank.T]
