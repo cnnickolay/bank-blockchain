@@ -1,0 +1,9 @@
+daml 1.2
+
+module Main.Com.Banking.Common where
+
+(<=<) : Action m => (b -> m c) -> (a -> m b) -> (a -> m c)
+(g <=< f) a = f a >>= g
+
+(<<$>>) : (Functor f) => (a -> b) -> f (f a) -> f (f b)
+(<<$>>) = fmap . fmap

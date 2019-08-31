@@ -3,13 +3,8 @@ daml 1.2
 module Test.Com.Banking.Index.Service where
 
 import Main.Com.Banking.Index.Service
-import Main.Com.Banking.Index.Model
 import DA.Tuple (thd3)
 import DA.Functor (void)
-
-instance TypeKey Text where
-    toKey = identity
-    fromKey = identity
 
 findTest : Scenario ()
 findTest = do
@@ -57,10 +52,10 @@ findTest = do
     --------------------------------------------
 
     -- |||| Deleting from index
-    run () $ void $ deleteFromIndex party myKey1 "11"
+    run () $ void $ dropFromIndex party myKey1 "11"
     run (Some ["22"]) $ find_ party myKey1
 
-    run () $ void $ deleteFromIndex party myKey1 "22"
+    run () $ void $ dropFromIndex party myKey1 "22"
     run None $ find_ party myKey1
 
 find_ : Party -> Text -> Update (Optional [Text])

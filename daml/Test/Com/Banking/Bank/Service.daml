@@ -4,11 +4,25 @@ module Test.Com.Banking.Bank.Service where
 
 import Main.Com.Banking.Bank.Service qualified as Bank
 import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Bank.Controller qualified as Bank
+import Test.Com.Banking.Utils.TestUtils
 
-bankCreation : Scenario ()
-bankCreation = do
-    owner <- getParty("owner")
-    let bank = Bank.CreateBank owner "test bank" "bic"
-    Bank.BankCreated bank <- submit owner do Bank.createBank bank
-    assertMsg "Unexpected bank stored" $ bank == (Bank.Bank owner "test bank" "bic")
-    -- pure ()
+bankCreationTest : Scenario ()
+bankCreationTest = do
+    creator <- getParty("creator")
+    owner <- getParty("bankOwner")
+
+    -- bank creation
+    submit creator do
+        Bank.BankCreated bank <- Bank.createBank creator $ Bank.CreateBank owner "test bank" "bic"
+        assertMsg "Unexpected bank stored" $ bank == (Bank.Model creator "test bank" "bic")
+        None !== lookupByKey @Bank.Model (creator, "bic")
+        None !== lookupByKey @Bank.Controller (creator, "bic")
+        [bank] === (Bank.getAllBanks creator)
+
+    -- bank deletion
+    submit creator do
+        Bank.BankDeleted bank <- Bank.deleteBank creator $ Bank.DeleteBank creator "bic"
+        None === lookupByKey @Bank.Model (creator, "bic")
+        None === lookupByKey @Bank.Controller (creator, "bic")
+        [] === (Bank.getAllBanks creator)

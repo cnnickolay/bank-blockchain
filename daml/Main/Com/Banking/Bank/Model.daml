@@ -2,11 +2,11 @@ daml 1.2
 
 module Main.Com.Banking.Bank.Model where
 
-type T = Bank
+type T = Model
 type K = Text
-type C = ContractId Bank
+type C = ContractId Model
 
-template Bank
+template Model
   with
     owner: Party
     name: Text

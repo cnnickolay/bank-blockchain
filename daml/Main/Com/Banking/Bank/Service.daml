@@ -3,6 +3,11 @@ daml 1.2
 module Main.Com.Banking.Bank.Service where
 
 import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Bank.Controller qualified as Bank
+import Main.Com.Banking.Index.Service qualified as Index
+import Main.Com.Banking.Index.Model qualified as Index
+
+indexName = "Banks"
 
 data Request
     = CreateBank_ CreateBank
@@ -12,18 +17,34 @@ data Response
     = BankCreated Bank.T
     | BankDeleted Bank.T
 
-data CreateBank = CreateBank with owner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
-data DeleteBank = DeleteBank with owner: Party, bic: Bank.K deriving (Eq, Show)
+data CreateBank = CreateBank with bankOwner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
+data DeleteBank = DeleteBank with bankOwner: Party, bic: Bank.K deriving (Eq, Show)
 
-handle : Request -> Update Response
-handle (CreateBank_ request) = createBank request
-handle (DeleteBank_ request) = deleteBank request
+handle : Party -> Request -> Update Response
+handle creator (CreateBank_ request) = createBank creator request
+handle creator (DeleteBank_ request) = deleteBank creator request
 
-createBank : CreateBank -> Update Response
-createBank CreateBank {owner, name, bic} = BankCreated <$> (create Bank.Bank with owner, name, bic >>= fetch)
+createBank : Party -> CreateBank -> Update Response
+createBank creator CreateBank{bankOwner, name, bic} = do
+    response <- BankCreated <$> (create Bank.Model with owner = creator, name, bic >>= fetch)
+    create Bank.Controller with creator, bankOwner, bankId = bic
+    Index.storeInIndex creator indexName bic
+    pure response
 
-deleteBank : DeleteBank -> Update Response
-deleteBank DeleteBank {owner, bic} = do
-    (bankCId, bank) <- fetchByKey @Bank.Bank (owner, bic)
-    archive bankCId
+deleteBank : Party -> DeleteBank -> Update Response
+deleteBank creator DeleteBank{bankOwner, bic} = do
+    (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
+    controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
+    archive bankCId >> archive controllerId
+    Index.dropFromIndex creator indexName "bic"
     pure $ BankDeleted bank
+
+getAllBanks : Party -> Update [Bank.T]
+getAllBanks party = do
+    indexO <- Index.findInIndex party indexName
+    case indexO of
+        None -> pure []
+        Some (_, _, values: [Bank.K]) -> mapA fetch_ (Index.toKey <$> values)
+  where
+    fetch_ : Bank.K -> Update Bank.T
+    fetch_ k = snd <$> (fetchByKey @Bank.Model (party, k))

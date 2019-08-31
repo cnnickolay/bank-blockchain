@@ -35,8 +35,8 @@ storeInIndex owner key_ value = do
                     key_ = toKey key_
                     values = values
 
-deleteFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
-deleteFromIndex owner key_ value = do
+dropFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
+dropFromIndex owner key_ value = do
     record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
     case record of
         None -> pure None

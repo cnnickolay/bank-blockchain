@@ -16,5 +16,9 @@ template Record
     maintainer key._1
 
 class TypeKey a where
-  toKey : a -> K
-  fromKey : K -> a
+    toKey : a -> K
+    fromKey : K -> a
+
+instance TypeKey Text where
+    toKey = identity
+    fromKey = identity

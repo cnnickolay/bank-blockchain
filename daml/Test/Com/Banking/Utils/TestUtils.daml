@@ -1,0 +1,28 @@
+daml 1.2
+
+module Test.Com.Banking.Utils.TestUtils where
+
+class (Eq a, Show a, CanAbort m) => Assertion m a where
+    (===) : a -> m a -> m ()
+    (===) a b = do
+        b' <- b
+        if a == b' then
+            pure ()
+        else
+            abort $ "Equality check failed \"" <> (show a) <> "\" was not equal: \"" <> (show b') <> "\""
+
+    (!==) : a -> m a -> m ()
+    (!==) a b = do
+        b' <- b
+        if a /= b' then
+            pure ()
+        else
+            abort $ "Unequality check failed: \"" <> (show a) <> "\" was equal: \"" <> (show b') <> "\""
+
+    isEqual : a -> m a -> m Bool
+
+instance (Eq a, Show a) => Assertion Scenario a where
+    isEqual a b = (a == ) <$> b
+
+instance (Eq a, Show a) => Assertion Update a where
+    isEqual a b = (a == ) <$> b

@@ -7,12 +7,16 @@ import Main.Com.Banking.Bank.Model qualified as Bank
 
 template Controller
   with
-    owner: Party
+    creator: Party
+    bankOwner: Party
     bankId: Bank.K
   where
-    signatory owner
+    signatory creator
 
-    controller owner can
+    key (creator, bankId) : (Party,  Bank.K)
+    maintainer key._1
+
+    controller bankOwner can
       nonconsuming CreateAccount : Account.CreatedAccount
         with command : Account.AccountCreate
         do Account.createAccount command
