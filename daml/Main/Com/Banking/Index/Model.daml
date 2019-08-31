@@ -1,0 +1,20 @@
+daml 1.2
+
+module Main.Com.Banking.Index.Model where
+
+type K = Text
+
+template Record
+  with
+    owner: Party
+    key_: K
+    values: [K]
+  where
+    signatory owner
+
+    key (owner, key_): (Party, K)
+    maintainer key._1
+
+class TypeKey a where
+  toKey : a -> K
+  fromKey : K -> a

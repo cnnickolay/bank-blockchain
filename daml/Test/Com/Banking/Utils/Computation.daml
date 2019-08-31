@@ -1,0 +1,26 @@
+daml 1.2
+
+module Test.Com.Banking.Utils.Computation where
+
+import Main.Com.Banking.Utils.Computation
+
+testComputationMonad : Scenario ()
+testComputationMonad = do
+    party <- getParty("party")
+    let
+        -- compiler needs types to handle some cases correctly
+        (===) : Computation Int -> Computation Int -> Bool
+        a === b = a == b
+    -- Functor
+    assert $ Failure ["fail1"] == ((+1) <$> Failure ["fail1"])
+    assert $ Result 11 == ((+1) <$> Result 10)
+    -- Applicative
+    assert $ Result 11 == (Result (+1) <*> Result 10)
+    assert $ Failure ["a"] == (Result (+1) <*> (Failure ["a"]))
+    assert $ Failure ["a", "b"] === (Failure ["a"] <*> (Failure ["b"]))
+    assert $ Failure ["a", "b"] == (Result ((\_ _ _ -> 0)) <*> Failure ["a"] <*> (Result 4) <*> (Failure ["b"]))
+    -- Monad
+    assert $ Result 3 == (Result 1 >>= (\a -> pure $ a + 2))
+    assert $ Failure ["a"] === (Failure ["a"] >>= (const $ Result 4))
+    assert $ Failure ["a"] === (Result 4 >>= (const $ Failure ["a"]))
+

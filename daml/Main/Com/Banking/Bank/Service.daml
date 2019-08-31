@@ -4,16 +4,25 @@ module Main.Com.Banking.Bank.Service where
 
 import Main.Com.Banking.Bank.Model qualified as Bank
 
+data Request
+    = CreateBank_ CreateBank
+    | DeleteBank_ DeleteBank
+
+data Response
+    = BankCreated Bank.T
+    | BankDeleted Bank.T
+
 data CreateBank = CreateBank with owner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
 data DeleteBank = DeleteBank with owner: Party, bic: Bank.K deriving (Eq, Show)
 
-data BankCreated = BankCreated Bank.T
-data BankDeleted = BankDeleted Bank.T
+handle : Request -> Update Response
+handle (CreateBank_ request) = createBank request
+handle (DeleteBank_ request) = deleteBank request
 
-createBank : CreateBank -> Update BankCreated
+createBank : CreateBank -> Update Response
 createBank CreateBank {owner, name, bic} = BankCreated <$> (create Bank.Bank with owner, name, bic >>= fetch)
 
-deleteBank : DeleteBank -> Update BankDeleted
+deleteBank : DeleteBank -> Update Response
 deleteBank DeleteBank {owner, bic} = do
     (bankCId, bank) <- fetchByKey @Bank.Bank (owner, bic)
     archive bankCId

@@ -1,0 +1,42 @@
+daml 1.2
+
+module Test.Com.Banking.Index.Service where
+
+import Main.Com.Banking.Index.Service
+import Main.Com.Banking.Index.Model
+import DA.Tuple (thd3)
+import DA.Functor (void)
+
+instance TypeKey Text where
+    toKey = identity
+    fromKey = identity
+
+findTest : Scenario ()
+findTest = do
+    party <- getParty "Party"
+
+    let myKey1 = "1"
+        myKey2 = "2"
+        run : Eq a => a -> Update a -> Scenario ()
+        run expectation f = do
+            actual <- submit party do f
+            assert $ actual == expectation
+
+    -- Index is empty
+    run None $ find_ party myKey1
+
+    -- Adding an element to an empty index
+    run () $ void $ storeInIndex party myKey1 "11"
+    run (Some ["11"]) $ find_ party myKey1
+
+    -- Adding same key won't change index
+    run () $ void $ storeInIndex party myKey1 "11"
+    run (Some ["11"]) $ find_ party myKey1
+
+    -- Adding another key to an existing index
+    run () $ void $ storeInIndex party myKey1 "22"
+    run (Some ["11", "22"]) $ find_ party myKey1
+
+find_ : Party -> Text -> Update (Optional [Text])
+find_ party a = fmap thd3 <$> findInIndex party a
+
