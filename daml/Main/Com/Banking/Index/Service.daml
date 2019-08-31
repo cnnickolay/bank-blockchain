@@ -5,6 +5,7 @@ daml 1.2
 module Main.Com.Banking.Index.Service where
 
 import Main.Com.Banking.Index.Model
+import DA.List (delete)
 
 findInIndex : forall a b. (TypeKey a, TypeKey b) => Party -> a -> Update (Optional (ContractId Record, Record, [b]))
 findInIndex owner key_ = do
@@ -28,6 +29,24 @@ storeInIndex owner key_ value = do
             archive recordId
             >> saveRecord (record.values ++ [toKey value])
             >>= (\cId -> (cId, ) <$> fetch cId)
+  where
+    saveRecord values = create Record with
+                    owner
+                    key_ = toKey key_
+                    values = values
+
+deleteFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
+deleteFromIndex owner key_ value = do
+    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
+    case record of
+        None -> pure None
+        Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
+        Some (recordId, record, values) | elem value values ->
+            Some <$>    ( archive recordId
+                            >> saveRecord (delete (toKey value) record.values)
+                            >>= (\cId -> (cId, ) <$> fetch cId)
+                        )
+        Some (recordId, record, _) -> pure . Some $ (recordId, record)
   where
     saveRecord values = create Record with
                     owner

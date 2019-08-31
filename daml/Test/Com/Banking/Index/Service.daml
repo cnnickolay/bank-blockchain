@@ -56,5 +56,12 @@ findTest = do
     run (Some ["11", "22"]) $ find_ party myKey2
     --------------------------------------------
 
+    -- |||| Deleting from index
+    run () $ void $ deleteFromIndex party myKey1 "11"
+    run (Some ["22"]) $ find_ party myKey1
+
+    run () $ void $ deleteFromIndex party myKey1 "22"
+    run None $ find_ party myKey1
+
 find_ : Party -> Text -> Update (Optional [Text])
 find_ party a = fmap thd3 <$> findInIndex party a
