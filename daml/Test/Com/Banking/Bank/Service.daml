@@ -26,3 +26,15 @@ bankCreationTest = do
         None === lookupByKey @Bank.Model (creator, "bic")
         None === lookupByKey @Bank.Controller (creator, "bic")
         [] === (Bank.getAllBanks creator)
+
+accountCreationTest : Scenario ()
+accountCreationTest = do
+    creator <- getParty "creator"
+    bankOwner <- getParty "bankOwner"
+    accountOwner <- getParty "accountOwner"
+
+    bankController <- submit creator do
+        Bank.createBank creator $ Bank.CreateBank bankOwner "test bank" "bic"
+        fst <$> fetchByKey @Bank.Controller (creator, "bic")
+
+    pure ()

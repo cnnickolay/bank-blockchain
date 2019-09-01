@@ -1,0 +1,6 @@
+daml 1.2
+
+module Main.Com.Banking.Key where
+
+class Key a b | a -> b where
+    extractKey : a -> b

@@ -1,0 +1,16 @@
+daml 1.2
+
+module Main.Com.Banking.Account.Controller where
+
+import Main.Com.Banking.Account.Model qualified as Account
+
+template Controller
+  with
+    bank: Party
+    accountOwner: Party
+    accountId: Account.K
+  where
+    signatory bank
+
+    key (bank, accountId) : (Party, Account.K)
+    maintainer key._1

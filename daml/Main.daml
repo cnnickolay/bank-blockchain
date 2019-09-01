@@ -4,6 +4,6 @@
 daml 1.2
 module Main where
 
-import Tests.BankingSpec
+import Main.Com.Banking.Bank.Service
 
-setup = test1
+-- setup = test1

@@ -2,7 +2,7 @@ daml 1.2
 
 module Main.Com.Banking.RootContract where
 
-import Com.Banking.Bank.Service qualified as Bank
+import Main.Com.Banking.Bank.Service qualified as Bank
 
 template RootContract
   with
@@ -11,10 +11,6 @@ template RootContract
     signatory operator
 
     controller operator can
-      nonconsuming CreateBank : Bank.BankCreated
-        with msg: Bank.CreateBank
-        do Bank.createBank msg
-
-      nonconsuming DeleteBank : Bank.BankDeleted
-        with msg: Bank.DeleteBank
-        do Bank.deleteBank msg
+      nonconsuming BankRequest : Bank.Response
+        with msg: Bank.Request
+        do Bank.handle operator msg

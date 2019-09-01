@@ -2,6 +2,8 @@ daml 1.2
 
 module Main.Com.Banking.Bank.Model where
 
+import Main.Com.Banking.Key
+
 type T = Model
 type K = Text
 type C = ContractId Model
@@ -15,3 +17,6 @@ template Model
     signatory owner
     key (owner, bic): (Party, K)
     maintainer key._1
+
+instance Key Model K where
+    extractKey Model{bic} = bic

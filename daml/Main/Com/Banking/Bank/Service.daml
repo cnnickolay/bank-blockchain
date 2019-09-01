@@ -12,10 +12,12 @@ indexName = "Banks"
 data Request
     = CreateBank_ CreateBank
     | DeleteBank_ DeleteBank
+  deriving (Eq, Show)
 
 data Response
     = BankCreated Bank.T
     | BankDeleted Bank.T
+  deriving (Eq, Show)
 
 data CreateBank = CreateBank with bankOwner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
 data DeleteBank = DeleteBank with bankOwner: Party, bic: Bank.K deriving (Eq, Show)
