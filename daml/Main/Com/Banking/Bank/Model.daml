@@ -2,7 +2,7 @@ daml 1.2
 
 module Main.Com.Banking.Bank.Model where
 
-import Main.Com.Banking.Key
+import Main.Com.Banking.Utils.Key
 
 type T = Model
 type K = Text

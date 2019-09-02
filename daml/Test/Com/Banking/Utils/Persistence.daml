@@ -1,0 +1,45 @@
+daml 1.2
+
+module Test.Com.Banking.Utils.Persistence where
+
+import Main.Com.Banking.Utils.Persistence qualified as Persistence
+import Main.Com.Banking.Utils.Key
+
+template TestTemplate
+  with
+    party : Party
+    id : Text
+    name : Text
+    lastname : Text
+    amount : Decimal
+  where
+    signatory party
+    key (party, id) : (Party, Text)
+    maintainer key._1
+
+saveTest : Scenario ()
+saveTest = do
+    party <- getParty "party"
+    let
+        a = TestTemplate with party, id = "0", name = "niko", lastname = "che", amount = 0.0
+        tests = [
+                    ("0", "niko", "che", 0.0)
+                  , ("1", "niko", "che", 0.0)
+                  , ("2", "niko", "boo", 0.0)
+                  , ("3", "alex", "che", 0.0)
+                  , ("4", "john", "che", 0.0)
+                  , ("5", "cris", "che", 0.0)
+                ]
+    submit party do mapA (Persistence.save party) $ (\(id, name, lastname, amount) -> a with id, name, lastname, amount) <$> tests
+    pure ()
+
+instance Persistence.IndexedFields TestTemplate where
+    indexName _ = "TestTemplate"
+    indexes a = [ "all"
+                , "name: " <> a.name
+                , "lastname: " <> a.lastname
+                , "name: " <> a.name <> ", lastname: " <> a.lastname
+                ]
+
+instance Key TestTemplate Text where
+    extractKey = (.id)

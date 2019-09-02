@@ -1,0 +1,87 @@
+daml 1.2
+
+module Main.Com.Banking.Utils.Persistence where
+
+import Main.Com.Banking.Utils.Key
+import DA.List (delete)
+
+type IndexKey = Text
+
+template Record
+  with
+    owner: Party
+    key_: IndexKey
+    values: [IndexKey]
+  where
+    signatory owner
+
+    key (owner, key_): (Party, IndexKey)
+    maintainer key._1
+
+class TypeKey a where
+    toKey : a -> IndexKey
+    fromKey : IndexKey -> a
+
+instance TypeKey Text where
+    toKey = identity
+    fromKey = identity
+
+save : (Template a, IndexedFields a, Eq b, Key a b, TypeKey b) => Party -> a -> Update (ContractId a)
+save owner a = do
+    mapA (\index -> storeInIndex owner index pk) indexes_
+    create a
+  where
+    indexes_ = fullIndex a
+    pk = extractKey a
+
+class IndexedFields a where
+    fullIndex : a -> [IndexKey]
+    fullIndex a = ((indexName a <> ": ") <>) <$> (indexes a)
+    indexes : a -> [IndexKey]
+    indexName : a -> Text
+
+findInIndex : forall a b. (TypeKey a, TypeKey b) => Party -> a -> Update (Optional (ContractId Record, Record, [b]))
+findInIndex owner key_ = do
+    let aKey = toKey key_
+    contractId <- lookupByKey @Record (owner, aKey)
+    case contractId of
+        None -> pure None
+        Some id -> do
+            contract <- fetch id
+            let values = fromKey <$> contract.values
+            pure $ Some (id, contract, values)
+
+storeInIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (ContractId Record, Record)
+storeInIndex owner key_ value = do
+    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
+    case record of
+        None -> saveRecord [toKey value]
+                >>= (\cId -> (cId, ) <$> fetch cId)
+        Some (recordId, record, values) | elem value values -> pure (recordId, record)
+        Some (recordId, record, _) ->
+            archive recordId
+            >> saveRecord (record.values ++ [toKey value])
+            >>= (\cId -> (cId, ) <$> fetch cId)
+  where
+    saveRecord values = create Record with
+                    owner
+                    key_ = toKey key_
+                    values = values
+
+dropFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
+dropFromIndex owner key_ value = do
+    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
+    case record of
+        None -> pure None
+        Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
+        Some (recordId, record, values) | elem value values ->
+            Some <$>    ( archive recordId
+                            >> saveRecord (delete (toKey value) record.values)
+                            >>= (\cId -> (cId, ) <$> fetch cId)
+                        )
+        Some (recordId, record, _) -> pure . Some $ (recordId, record)
+  where
+    saveRecord values = create Record with
+                    owner
+                    key_ = toKey key_
+                    values = values
