@@ -1,87 +1,87 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 daml 1.2
 
 module Main.Com.Banking.Utils.Persistence where
 
-import Main.Com.Banking.Utils.Key
 import DA.List (delete)
+import Main.Com.Banking.Utils.IndexKeys
 
-type IndexKey = Text
-
-template Record
-  with
-    owner: Party
-    key_: IndexKey
-    values: [IndexKey]
-  where
-    signatory owner
-
-    key (owner, key_): (Party, IndexKey)
-    maintainer key._1
-
-class TypeKey a where
-    toKey : a -> IndexKey
-    fromKey : IndexKey -> a
-
-instance TypeKey Text where
-    toKey = identity
-    fromKey = identity
-
-save : (Template a, IndexedFields a, Eq b, Key a b, TypeKey b) => Party -> a -> Update (ContractId a)
+save : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
 save owner a = do
     mapA (\index -> storeInIndex owner index pk) indexes_
     create a
   where
-    indexes_ = fullIndex a
-    pk = extractKey a
+    indexes_ = indexes a
+    pk = extractId a
 
-class IndexedFields a where
-    fullIndex : a -> [IndexKey]
-    fullIndex a = ((indexName a <> ": ") <>) <$> (indexes a)
-    indexes : a -> [IndexKey]
-    indexName : a -> Text
+drop_ : forall model id. (TemplateKey model (Party, id), IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update ()
+drop_ owner model = dropModel >> dropIndexes >> pure ()
+  where
+        id = extractId model
+        indexes_ = indexes model
+        dropModel = ((fst <$> (find_ owner id)): Update (ContractId model)) >>= archive
+        dropIndexes = mapA (dropFromIndex owner id) indexes_
 
-findInIndex : forall a b. (TypeKey a, TypeKey b) => Party -> a -> Update (Optional (ContractId Record, Record, [b]))
+findInIndexAndFetch : IndexKeyConverter model id => IndexKey -> Party -> Update [(ContractId model, model)]
+findInIndexAndFetch indexKey party = allIdsInIndex >>= (\ids -> (mapA $ findContractByKey party) ids)
+  where
+    allIdsInIndex : IndexKeyConverter model id => Update [id]
+    allIdsInIndex = findInIndex party indexKey
+
+findContractByKey : IndexKeyConverter model id => Party -> id -> Update (ContractId model, model)
+findContractByKey party indexValue = find_ party indexValue
+
+rawIdToId : IndexKeyConverter model id => IndexValue -> id
+rawIdToId value = indexValueToId value
+
+find_ : (TemplateKey model (Party, id)) => Party -> id -> Update (ContractId model, model)
+find_ party key_ = fetchByKey (party, key_)
+
+findInIndex : (IndexKeyConverter model id) => Party -> IndexKey -> Update [id]
 findInIndex owner key_ = do
-    let aKey = toKey key_
-    contractId <- lookupByKey @Record (owner, aKey)
+    recordO <- findRecord owner key_
+    case recordO of
+        None -> pure []
+        Some (id, record) -> do
+            let values = indexValueToId <$> record.values
+            pure values
+
+findRecord : Party -> IndexKey -> Update (Optional (ContractId Record, Record))
+findRecord owner key_ = do
+    contractId <- lookupByKey @Record (owner, key_)
     case contractId of
         None -> pure None
         Some id -> do
             contract <- fetch id
-            let values = fromKey <$> contract.values
-            pure $ Some (id, contract, values)
+            pure $ Some (id, contract)
 
-storeInIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (ContractId Record, Record)
+storeInIndex : (TemplateKey model (Party, id), IndexKeyConverter model id, Eq id) => Party -> IndexKey -> id -> Update (ContractId Record, Record)
 storeInIndex owner key_ value = do
-    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
-    case record of
-        None -> saveRecord [toKey value]
+    recordO <- findRecord owner key_
+    case recordO of
+        None -> saveRecord [idToIndexValue value]
                 >>= (\cId -> (cId, ) <$> fetch cId)
-        Some (recordId, record, values) | elem value values -> pure (recordId, record)
-        Some (recordId, record, _) ->
+        Some (recordId, record) | elem (idToIndexValue value) record.values -> pure (recordId, record)
+        Some (recordId, record) ->
             archive recordId
-            >> saveRecord (record.values ++ [toKey value])
+            >> saveRecord (record.values ++ [idToIndexValue value])
             >>= (\cId -> (cId, ) <$> fetch cId)
   where
-    saveRecord values = create Record with
-                    owner
-                    key_ = toKey key_
-                    values = values
+    saveRecord values = create Record with owner, key_, values = values
 
-dropFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
-dropFromIndex owner key_ value = do
-    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
-    case record of
+dropFromIndex : (IndexKeyConverter m a, Eq a) => Party -> a -> IndexKey -> Update (Optional (ContractId Record, Record))
+dropFromIndex owner value key_ = do
+    recordO <- findRecord owner key_
+    case recordO of
         None -> pure None
-        Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
-        Some (recordId, record, values) | elem value values ->
+        Some (recordId, record) | [_] <- record.values -> archive recordId *> pure None
+        Some (recordId, record) | elem (idToIndexValue value) record.values ->
             Some <$>    ( archive recordId
-                            >> saveRecord (delete (toKey value) record.values)
+                            >> saveRecord (delete (idToIndexValue value) record.values)
                             >>= (\cId -> (cId, ) <$> fetch cId)
                         )
-        Some (recordId, record, _) -> pure . Some $ (recordId, record)
+        Some (recordId, record) -> pure . Some $ (recordId, record)
   where
-    saveRecord values = create Record with
-                    owner
-                    key_ = toKey key_
-                    values = values
+    saveRecord values = create Record with owner, key_, values = values

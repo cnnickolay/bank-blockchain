@@ -1,0 +1,21 @@
+daml 1.2
+
+module Main.Com.Banking.Bank.Persistence where
+
+import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Utils.Persistence
+
+allBanksIndex = (Bank, [(All, "")])
+
+instance IndexedFields Bank.T where
+    indexes bank = [(Bank, [(All, "")])]
+
+findAllBanks : Party -> Update [(ContractId Bank.T, Bank.T)]
+findAllBanks = findInIndexAndFetch allBanksIndex
+
+saveBank : Party -> Bank.T -> Update (ContractId Bank.T)
+saveBank = save
+
+dropBank : Party -> Bank.T -> Update ()
+dropBank = drop_

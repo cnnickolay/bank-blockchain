@@ -2,7 +2,7 @@ daml 1.2
 
 module Main.Com.Banking.Bank.Model where
 
-import Main.Com.Banking.Utils.Key
+import Main.Com.Banking.Utils.IndexKeys
 
 type T = Model
 type K = Text
@@ -18,5 +18,7 @@ template Model
     key (owner, bic): (Party, K)
     maintainer key._1
 
-instance Key Model K where
-    extractKey Model{bic} = bic
+instance IndexKeyConverter Model K where
+    idToIndexValue = identity
+    indexValueToId = identity
+    extractId = (.bic)

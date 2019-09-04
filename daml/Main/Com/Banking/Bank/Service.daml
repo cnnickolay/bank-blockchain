@@ -4,10 +4,7 @@ module Main.Com.Banking.Bank.Service where
 
 import Main.Com.Banking.Bank.Model qualified as Bank
 import Main.Com.Banking.Bank.Controller qualified as Bank
-import Main.Com.Banking.Index.Service qualified as Index
-import Main.Com.Banking.Index.Model qualified as Index
-
-indexName = "Banks"
+import Main.Com.Banking.Bank.Persistence qualified as Bank
 
 data Request
     = CreateBank_ CreateBank
@@ -28,25 +25,17 @@ handle creator (DeleteBank_ request) = deleteBank creator request
 
 createBank : Party -> CreateBank -> Update Response
 createBank creator CreateBank{bankOwner, name, bic} = do
-    response <- BankCreated <$> (create Bank.Model with owner = creator, name, bic >>= fetch)
+    let bank = Bank.Model with owner = creator, name, bic
+    response <- BankCreated <$> (Bank.saveBank creator bank *> (pure bank))
     create Bank.Controller with creator, bankOwner, bankId = bic
-    Index.storeInIndex creator indexName bic
     pure response
 
 deleteBank : Party -> DeleteBank -> Update Response
 deleteBank creator DeleteBank{bankOwner, bic} = do
     (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
     controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
-    archive bankCId >> archive controllerId
-    Index.dropFromIndex creator indexName bic
+    Bank.dropBank creator bank
+    archive controllerId
     pure $ BankDeleted bank
 
-getAllBanks : Party -> Update [Bank.T]
-getAllBanks party = do
-    indexO <- Index.findInIndex party indexName
-    case indexO of
-        None -> pure []
-        Some (_, _, values: [Bank.K]) -> mapA fetch_ (Index.toKey <$> values)
-  where
-    fetch_ : Bank.K -> Update Bank.T
-    fetch_ k = snd <$> (fetchByKey @Bank.Model (party, k))
+findAllBanks = Bank.findAllBanks

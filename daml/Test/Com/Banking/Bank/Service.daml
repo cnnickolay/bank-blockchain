@@ -6,6 +6,7 @@ import Main.Com.Banking.Bank.Service qualified as Bank
 import Main.Com.Banking.Bank.Model qualified as Bank
 import Main.Com.Banking.Bank.Controller qualified as Bank
 import Test.Com.Banking.Utils.TestUtils
+import Main.Com.Banking.Utils.Common ((<<$>>))
 
 bankCreationTest : Scenario ()
 bankCreationTest = do
@@ -18,23 +19,11 @@ bankCreationTest = do
         assertMsg "Unexpected bank stored" $ bank == (Bank.Model creator "test bank" "bic")
         None !== lookupByKey @Bank.Model (creator, "bic")
         None !== lookupByKey @Bank.Controller (creator, "bic")
-        [bank] === (Bank.getAllBanks creator)
+        [bank] === (snd <<$>> (Bank.findAllBanks creator))
 
     -- bank deletion
     submit creator do
         Bank.BankDeleted bank <- Bank.deleteBank creator $ Bank.DeleteBank creator "bic"
         None === lookupByKey @Bank.Model (creator, "bic")
         None === lookupByKey @Bank.Controller (creator, "bic")
-        [] === (Bank.getAllBanks creator)
-
-accountCreationTest : Scenario ()
-accountCreationTest = do
-    creator <- getParty "creator"
-    bankOwner <- getParty "bankOwner"
-    accountOwner <- getParty "accountOwner"
-
-    bankController <- submit creator do
-        Bank.createBank creator $ Bank.CreateBank bankOwner "test bank" "bic"
-        fst <$> fetchByKey @Bank.Controller (creator, "bic")
-
-    pure ()
+        [] === (snd <<$>> (Bank.findAllBanks creator))

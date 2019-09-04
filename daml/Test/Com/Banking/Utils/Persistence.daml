@@ -3,7 +3,9 @@ daml 1.2
 module Test.Com.Banking.Utils.Persistence where
 
 import Main.Com.Banking.Utils.Persistence qualified as Persistence
-import Main.Com.Banking.Utils.Key
+import Main.Com.Banking.Utils.IndexKeys
+import Test.Com.Banking.Utils.TestUtils
+import Main.Com.Banking.Utils.Common ((<<$>>))
 
 template TestTemplate
   with
@@ -17,11 +19,20 @@ template TestTemplate
     key (party, id) : (Party, Text)
     maintainer key._1
 
+instance IndexKeyConverter TestTemplate Text where
+    idToIndexValue = identity
+    indexValueToId = identity
+    extractId = (.id)
+
 saveTest : Scenario ()
 saveTest = do
     party <- getParty "party"
     let
         a = TestTemplate with party, id = "0", name = "niko", lastname = "che", amount = 0.0
+        findByName : Text -> Update [TestTemplate]
+        findByName name = snd <<$>> (Persistence.findInIndexAndFetch (Bank, [(Name, name)]) party)
+        findByNameAndLastName : Text -> Text -> Update [TestTemplate]
+        findByNameAndLastName name lastname = snd <<$>> Persistence.findInIndexAndFetch (Bank, [(Name, name), (LastName, lastname)]) party
         tests = [
                     ("0", "niko", "che", 0.0)
                   , ("1", "niko", "che", 0.0)
@@ -30,16 +41,22 @@ saveTest = do
                   , ("4", "john", "che", 0.0)
                   , ("5", "cris", "che", 0.0)
                 ]
-    submit party do mapA (Persistence.save party) $ (\(id, name, lastname, amount) -> a with id, name, lastname, amount) <$> tests
+    submit party do
+        mapA (Persistence.save party) $ (\(id, name, lastname, amount) -> a with id, name, lastname, amount) <$> tests
+        ["0", "1", "2"] === ((.id) <<$>> (findByName "niko"))
+        ["0", "1"] === ((.id) <<$>> (findByNameAndLastName "niko" "che"))
+
+deleteTest : Scenario ()
+deleteTest = do
+    party <- getParty "party"
+
     pure ()
 
-instance Persistence.IndexedFields TestTemplate where
-    indexName _ = "TestTemplate"
-    indexes a = [ "all"
-                , "name: " <> a.name
-                , "lastname: " <> a.lastname
-                , "name: " <> a.name <> ", lastname: " <> a.lastname
-                ]
-
-instance Key TestTemplate Text where
-    extractKey = (.id)
+instance IndexedFields TestTemplate where
+    indexes a =
+        [
+            ( Bank, [ (All, "") ] )
+          , ( Bank, [ (Name, a.name) ] )
+          , ( Bank, [ (LastName, a.lastname) ] )
+          , ( Bank, [ (Name, a.name), (LastName, a.lastname) ] )
+        ]

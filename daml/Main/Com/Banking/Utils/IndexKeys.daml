@@ -1,0 +1,39 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
+daml 1.2
+
+module Main.Com.Banking.Utils.IndexKeys where
+
+type IndexKey = (Table, [(Field, Text)])
+type IndexValue = Text
+
+data Table
+  = Bank
+  | Account
+    deriving (Eq, Show)
+
+data Field
+  = All
+  | Name
+  | LastName
+    deriving (Eq, Show)
+
+class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverter model id | id -> model, model -> id where
+    idToIndexValue : id -> IndexValue
+    indexValueToId : IndexValue -> id
+    extractId : model -> id
+
+class IndexedFields a where
+    indexes : a -> [IndexKey]
+
+template Record
+  with
+    owner: Party
+    key_: IndexKey
+    values: [IndexValue]
+  where
+    signatory owner
+
+    key (owner, key_): (Party, IndexKey)
+    maintainer key._1

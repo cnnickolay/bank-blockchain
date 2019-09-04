@@ -1,4 +1,4 @@
-sdk-version: 0.13.20
+sdk-version: 0.13.21
 name: bank
 source: daml/Main.daml
 scenario: Main:setup

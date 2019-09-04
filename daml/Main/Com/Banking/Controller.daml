@@ -1,0 +1,21 @@
+daml 1.2
+
+module Main.Com.Banking.Controller where
+
+import DA.Record
+
+class (Eq t, HasField "owner" t Party) => Common t
+
+template Common a => Controller a
+  with
+    assett : a
+  where
+    signatory assett.owner
+
+template A
+  with
+    owner : Party
+    value : Decimal
+  where
+    signatory owner
+
