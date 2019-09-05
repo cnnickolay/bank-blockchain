@@ -1,0 +1,13 @@
+daml 1.2
+
+module Main.Com.Banking.Utils.Logger where
+
+template Log
+  with
+    party : Party
+    msg : Text
+  where
+    signatory party
+
+log : Party -> Text -> Update ()
+log party msg = create (Log party $ "DEBUG: " <> msg) *> pure ()

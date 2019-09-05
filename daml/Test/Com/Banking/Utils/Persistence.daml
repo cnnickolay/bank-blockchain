@@ -42,7 +42,7 @@ saveTest = do
                   , ("5", "cris", "che", 0.0)
                 ]
     submit party do
-        mapA (Persistence.save party) $ (\(id, name, lastname, amount) -> a with id, name, lastname, amount) <$> tests
+        mapA (Persistence.save_ party) $ (\(id, name, lastname, amount) -> a with id, name, lastname, amount) <$> tests
         ["0", "1", "2"] === ((.id) <<$>> (findByName "niko"))
         ["0", "1"] === ((.id) <<$>> (findByNameAndLastName "niko" "che"))
 

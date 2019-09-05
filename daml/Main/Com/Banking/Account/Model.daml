@@ -3,12 +3,14 @@ daml 1.2
 module Main.Com.Banking.Account.Model where
 
 import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Utils.IndexKeys
+import DA.Text (splitOn)
 
-type T = Account
+type T = Model
 type K = (Text, Bank.K)
-type C = ContractId Account
+type C = ContractId Model
 
-template Account
+template Model
   with
     owner: Party
     name: Text
@@ -19,3 +21,13 @@ template Account
     signatory owner
     key (owner, (accountNumber, bankId)) : (Party, K)
     maintainer key._1
+
+instance IndexKeyConverter T K where
+    idToIndexValue (accountNumber, bankId) = "AccountNumber " <> accountNumber <> " BankId " <> bankId
+    indexValueToId raw = (accountNumber, bankId)
+      where
+        (accountNumber, bankId) = case splitOn " " raw of
+            ["AccountNumber", accountNumber, "BankId", bankId] -> (accountNumber, bankId)
+            _ -> ("", "")
+
+    extractId v = (v.accountNumber, v.bankId)

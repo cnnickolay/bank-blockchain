@@ -2,18 +2,42 @@ daml 1.2
 
 module Main.Com.Banking.Account.Service where
 
+import Main.Com.Banking.Account.Controller qualified as Account
+import Main.Com.Banking.Account.Persistence qualified as Account
 import Main.Com.Banking.Account.Model qualified as Account
 import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Utils.IndexKeys
+
+data Request
+  = AccountCreate_ AccountCreate
+  deriving (Eq, Show)
+
+data Response
+  = AccountCreated Account.T
+  deriving (Eq, Show)
 
 data AccountCreate = AccountCreate with
     owner: Party
     name: Text
     accountNumber: Text
-    amount: Decimal
+    initialAmount: Decimal
     bankId: Bank.K
   deriving (Eq, Show)
 
-data CreatedAccount = CreatedAccount Account.T deriving Eq
+handle : Party -> Request -> Update Response
+handle party (AccountCreate_ request) = createAccount party request
 
-createAccount : AccountCreate -> Update CreatedAccount
-createAccount = const $ abort ""
+createAccount : Party -> AccountCreate -> Update Response
+createAccount bank request = do
+    let account = Account.Model with
+          owner = bank
+          name = request.name
+          accountNumber = request.accountNumber
+          initialAmount = request.initialAmount
+          bankId = request.bankId
+    response <- AccountCreated <$> (Account.save bank account *> (pure account))
+    create $ Account.Controller with bank, accountOwner = request.owner, accountId = extractId account
+    pure response
+
+findAccountsByBank = Account.findAccountsByBank
+findAllAccounts = Account.findAllAccounts

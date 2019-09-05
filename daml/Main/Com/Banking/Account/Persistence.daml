@@ -1,0 +1,28 @@
+daml 1.2
+
+module Main.Com.Banking.Account.Persistence where
+
+import Main.Com.Banking.Utils.IndexKeys qualified as Index
+import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Utils.Persistence
+
+allIndex = (Index.Account, [(Index.All, "")])
+
+instance Index.IndexedFields Account.T where
+    indexes account = [allIndex, (Index.Account, [(Index.BankId, account.bankId)])]
+
+findAll : Party -> Update [(ContractId Account.T, Account.T)]
+findAll = findInIndexAndFetch allIndex
+
+save : Party -> Account.T -> Update (ContractId Account.T)
+save = save_
+
+dropBank : Party -> Account.T -> Update ()
+dropBank = drop_
+
+findAccountsByBank : Party -> Bank.K -> Update [(ContractId Account.T, Account.T)]
+findAccountsByBank party bankId = findInIndexAndFetch (Index.Account, [(Index.BankId, bankId)]) party
+
+findAllAccounts : Party -> Update [(ContractId Account.T, Account.T)]
+findAllAccounts = findInIndexAndFetch allIndex

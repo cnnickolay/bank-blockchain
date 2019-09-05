@@ -8,8 +8,8 @@ module Main.Com.Banking.Utils.Persistence where
 import DA.List (delete)
 import Main.Com.Banking.Utils.IndexKeys
 
-save : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
-save owner a = do
+save_ : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
+save_ owner a = do
     mapA (\index -> storeInIndex owner index pk) indexes_
     create a
   where

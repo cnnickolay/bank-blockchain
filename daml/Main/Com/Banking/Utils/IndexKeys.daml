@@ -17,6 +17,7 @@ data Field
   = All
   | Name
   | LastName
+  | BankId
     deriving (Eq, Show)
 
 class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverter model id | id -> model, model -> id where

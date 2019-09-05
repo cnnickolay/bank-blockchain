@@ -3,6 +3,7 @@ daml 1.2
 module Main.Com.Banking.Account.Controller where
 
 import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
 
 template Controller
   with
@@ -14,3 +15,7 @@ template Controller
 
     key (bank, accountId) : (Party, Account.K)
     maintainer key._1
+
+    -- controller accountOwner can
+    --   nonconsuming TransferOrder : Update (ContractId TransferOrder.T)
+    --     do

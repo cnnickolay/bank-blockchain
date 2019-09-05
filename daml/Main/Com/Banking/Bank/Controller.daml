@@ -17,6 +17,6 @@ template Controller
     maintainer key._1
 
     controller bankOwner can
-      nonconsuming CreateAccount : Account.CreatedAccount
-        with command : Account.AccountCreate
-        do Account.createAccount command
+      nonconsuming AccountRequest : Account.Response
+        with command : Account.Request
+        do Account.handle bankOwner command

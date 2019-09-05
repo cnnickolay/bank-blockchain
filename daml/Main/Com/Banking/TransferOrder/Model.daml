@@ -1,0 +1,36 @@
+daml 1.2
+
+module Main.Com.Banking.TransferOrder.Model where
+
+import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Account.Model qualified as Account
+import DA.Text (parseInt, implode, splitOn)
+import DA.List (intersperse)
+import DA.Optional (fromOptional)
+
+type T = Model
+type K = (Int, Account.K)
+
+template Model
+  with
+    accountOwner: Party
+    idx: Int
+    fromAccount: Account.K
+    toAccount: Account.K
+    amount: Decimal
+    description: Text
+  where
+    signatory accountOwner
+    ensure amount > 0.0
+    key (accountOwner, (idx, fromAccount)) : (Party, K)
+    maintainer key._1
+
+instance IndexKeyConverter Model K where
+    idToIndexValue (idx, accountId) = implode $ intersperse " " ["Idx", show idx, "AccountId", idToIndexValue accountId]
+    indexValueToId text = (idx, accountId)
+      where
+        (idx, accountId) = case splitOn " " text of
+            ["Idx", idx, "AccountId", accountId] -> (fromOptional 0 (parseInt idx), indexValueToId accountId)
+            _ -> (0, ("", ""))
+
+    extractId v = (v.idx, v.fromAccount)

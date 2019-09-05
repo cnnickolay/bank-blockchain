@@ -15,7 +15,7 @@ findAllBanks : Party -> Update [(ContractId Bank.T, Bank.T)]
 findAllBanks = findInIndexAndFetch allBanksIndex
 
 saveBank : Party -> Bank.T -> Update (ContractId Bank.T)
-saveBank = save
+saveBank = save_
 
 dropBank : Party -> Bank.T -> Update ()
 dropBank = drop_

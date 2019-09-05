@@ -7,6 +7,7 @@ import Main.Com.Banking.Bank.Model qualified as Bank
 import Main.Com.Banking.Bank.Controller qualified as Bank
 import Test.Com.Banking.Utils.TestUtils
 import Main.Com.Banking.Utils.Common ((<<$>>))
+import Main.Com.Banking.Account.Service qualified as Account
 
 bankCreationTest : Scenario ()
 bankCreationTest = do
@@ -27,3 +28,23 @@ bankCreationTest = do
         None === lookupByKey @Bank.Model (creator, "bic")
         None === lookupByKey @Bank.Controller (creator, "bic")
         [] === (snd <<$>> (Bank.findAllBanks creator))
+
+shouldNotBeAbleToDeleteBankIfAccountExists : Scenario ()
+shouldNotBeAbleToDeleteBankIfAccountExists = do
+    creator <- getParty("creator")
+    bankOwner <- getParty("bankOwner")
+    accountOwner <- getParty("bankOwner")
+
+    -- bank creation
+    bank <- submit creator do
+        Bank.BankCreated bank <- Bank.createBank creator $ Bank.CreateBank bankOwner "test bank" "bic"
+        pure bank
+
+    account <- submit bankOwner do
+        Account.AccountCreated account <- Account.createAccount bankOwner $ Account.AccountCreate accountOwner "account" "1111111" 5.0 bank.bic
+        [account] === (snd <<$>> Account.findAccountsByBank bankOwner "bic")
+        pure account
+
+    -- can't delete bank if accounts exist
+    submitMustFail bankOwner do
+        Bank.deleteBank creator $ Bank.DeleteBank creator "bic"

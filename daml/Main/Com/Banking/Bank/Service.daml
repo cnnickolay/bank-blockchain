@@ -5,6 +5,7 @@ module Main.Com.Banking.Bank.Service where
 import Main.Com.Banking.Bank.Model qualified as Bank
 import Main.Com.Banking.Bank.Controller qualified as Bank
 import Main.Com.Banking.Bank.Persistence qualified as Bank
+import Main.Com.Banking.Account.Service qualified as Account
 
 data Request
     = CreateBank_ CreateBank
@@ -32,10 +33,14 @@ createBank creator CreateBank{bankOwner, name, bic} = do
 
 deleteBank : Party -> DeleteBank -> Update Response
 deleteBank creator DeleteBank{bankOwner, bic} = do
-    (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
-    controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
-    Bank.dropBank creator bank
-    archive controllerId
-    pure $ BankDeleted bank
+    accounts <- Account.findAccountsByBank bankOwner bic
+    case accounts of
+        [] -> do
+            (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
+            controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
+            Bank.dropBank creator bank
+            archive controllerId
+            pure $ BankDeleted bank
+        _ -> abort "Unable to delete bank when accounts still present"
 
 findAllBanks = Bank.findAllBanks

@@ -1,0 +1,45 @@
+daml 1.2
+
+module Test.Com.Banking.Account.Service where
+
+import Main.Com.Banking.Bank.Service qualified as Bank
+import Main.Com.Banking.Account.Service qualified as Account
+import Test.Com.Banking.Utils.TestUtils
+import Main.Com.Banking.Utils.Common ((<<$>>))
+
+accountCreationTest : Scenario ()
+accountCreationTest = do
+    master <- getParty "master"
+    bank1Owner <- getParty "bank1Owner"
+    bankAOwner <- getParty "bankAOwner"
+    account1Owner <- getParty "account1Owner"
+    account2Owner <- getParty "account2Owner"
+    accountAOwner <- getParty "accountAOwner"
+    accountBOwner <- getParty "accountBOwner"
+
+    (bank1, bankA) <- submit master do
+        Bank.BankCreated bank1 <- Bank.createBank master $ Bank.CreateBank bank1Owner "test bank 1" "bic1"
+        Bank.BankCreated bankA <- Bank.createBank master $ Bank.CreateBank bankAOwner "test bank A" "bicA"
+        pure (bank1, bankA)
+
+    (account1, account2) <- submit bank1Owner do
+        Account.AccountCreated account1 <- Account.createAccount bank1Owner $ Account.AccountCreate account1Owner "account1" "111111" 10.0 bank1.bic
+        Account.AccountCreated account2 <- Account.createAccount bank1Owner $ Account.AccountCreate account2Owner "account2" "222222" 100.0 bank1.bic
+        pure (account1, account2)
+
+    (accountA, accountB) <- submit bankAOwner do
+        Account.AccountCreated accountA <- Account.createAccount bankAOwner $ Account.AccountCreate accountAOwner "accountA" "AAAAAA" 5.0 bankA.bic
+        Account.AccountCreated accountB <- Account.createAccount bankAOwner $ Account.AccountCreate accountBOwner "accountB" "BBBBBB" 50.0 bankA.bic
+        pure (accountA, accountB)
+
+    submit bank1Owner do
+        [account1, account2] === (snd <<$>> (Account.findAccountsByBank bank1Owner bank1.bic))
+
+    submit bankAOwner do
+        [accountA, accountB] === (snd <<$>> (Account.findAccountsByBank bankAOwner bankA.bic))
+
+    -- Bank A is trying to get accounts of bank 1 and fails
+    submit bankAOwner do
+        [] === (snd <<$>> (Account.findAccountsByBank bankAOwner bank1.bic))
+
+    pure ()
