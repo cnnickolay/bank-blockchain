@@ -41,5 +41,3 @@ accountCreationTest = do
     -- Bank A is trying to get accounts of bank 1 and fails
     submit bankAOwner do
         [] === (snd <<$>> (Account.findAccountsByBank bankAOwner bank1.bic))
-
-    pure ()

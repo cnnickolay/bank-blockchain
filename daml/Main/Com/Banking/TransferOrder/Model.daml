@@ -6,7 +6,6 @@ import Main.Com.Banking.Utils.IndexKeys
 import Main.Com.Banking.Account.Model qualified as Account
 import DA.Text (parseInt, implode, splitOn)
 import DA.List (intersperse)
-import DA.Optional (fromOptional)
 
 type T = Model
 type K = (Int, Account.K)
@@ -26,11 +25,11 @@ template Model
     maintainer key._1
 
 instance IndexKeyConverter Model K where
-    idToIndexValue (idx, accountId) = implode $ intersperse " " ["Idx", show idx, "AccountId", idToIndexValue accountId]
-    indexValueToId text = (idx, accountId)
-      where
-        (idx, accountId) = case splitOn " " text of
-            ["Idx", idx, "AccountId", accountId] -> (fromOptional 0 (parseInt idx), indexValueToId accountId)
-            _ -> (0, ("", ""))
+    idToIndexValue (idx, accountId) = do
+        accountIdIdx <- idToIndexValue accountId
+        pure . implode $ intersperse " " ["Idx", show idx, "AccountId", accountIdIdx]
+    indexValueToId text = case splitOn " " text of
+        ["Idx", idx, "AccountId", accountId] -> (,) <$> parseInt idx <*> indexValueToId accountId
+        _ -> None
 
     extractId v = (v.idx, v.fromAccount)

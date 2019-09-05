@@ -23,11 +23,9 @@ template Model
     maintainer key._1
 
 instance IndexKeyConverter T K where
-    idToIndexValue (accountNumber, bankId) = "AccountNumber " <> accountNumber <> " BankId " <> bankId
-    indexValueToId raw = (accountNumber, bankId)
-      where
-        (accountNumber, bankId) = case splitOn " " raw of
-            ["AccountNumber", accountNumber, "BankId", bankId] -> (accountNumber, bankId)
-            _ -> ("", "")
+    idToIndexValue (accountNumber, bankId) = Some $ "AccountNumber " <> accountNumber <> " BankId " <> bankId
+    indexValueToId raw = case splitOn " " raw of
+        ["AccountNumber", accountNumber, "BankId", bankId] -> Some (accountNumber, bankId)
+        _ -> None
 
     extractId v = (v.accountNumber, v.bankId)

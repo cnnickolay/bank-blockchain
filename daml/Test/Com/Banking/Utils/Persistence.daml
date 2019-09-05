@@ -20,8 +20,8 @@ template TestTemplate
     maintainer key._1
 
 instance IndexKeyConverter TestTemplate Text where
-    idToIndexValue = identity
-    indexValueToId = identity
+    idToIndexValue = Some
+    indexValueToId = Some
     extractId = (.id)
 
 saveTest : Scenario ()

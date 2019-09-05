@@ -19,6 +19,6 @@ template Model
     maintainer key._1
 
 instance IndexKeyConverter Model K where
-    idToIndexValue = identity
-    indexValueToId = identity
+    idToIndexValue = Some
+    indexValueToId = Some
     extractId = (.bic)
