@@ -1,3 +1,6 @@
 daml 1.2
 
 module Main.Com.Banking.TransferOrder.Service where
+
+createTransferOrder : Party -> Text -> Text -> Text -> Text -> Decimal -> Text -> Update ()
+createTransferOrder party fromAccount fromBic toAccount toBic amount description = do

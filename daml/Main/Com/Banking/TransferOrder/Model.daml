@@ -31,5 +31,4 @@ instance IndexKeyConverter Model K where
     indexValueToId text = case splitOn " " text of
         ["Idx", idx, "AccountId", accountId] -> (,) <$> parseInt idx <*> indexValueToId accountId
         _ -> None
-
     extractId v = (v.idx, v.fromAccount)
