@@ -26,3 +26,6 @@ findAccountsByBank party bankId = findInIndexAndFetch (Index.Account, [(Index.Ba
 
 findAllAccounts : Party -> Update [(ContractId Account.T, Account.T)]
 findAllAccounts = findInIndexAndFetch allIndex
+
+findAccount : Party -> Account.K -> Update (ContractId Account.T, Account.T)
+findAccount = find_

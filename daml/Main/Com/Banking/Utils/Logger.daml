@@ -10,4 +10,4 @@ template Log
     signatory party
 
 log : Party -> Text -> Update ()
-log party msg = create (Log party $ "DEBUG: " <> msg) *> pure ()
+log party msg = create (Log party $ show party <> "|DEBUG: " <> msg) *> pure ()

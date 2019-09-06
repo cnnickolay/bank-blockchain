@@ -14,3 +14,9 @@ orders accNum bic = (TransferOrder, [(AccountNumber, accNum), (BankId, bic)])
 
 findOrders : Party -> Account.T -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
 findOrders party Account.Model{accountNumber, bankId} = findInIndexAndFetch (orders accountNumber bankId) party
+
+saveOrder : Party -> TransferOrder.T -> Update (ContractId TransferOrder.T)
+saveOrder = save_
+
+dropOrder : Party -> TransferOrder.T -> Update ()
+dropOrder = drop_

@@ -27,6 +27,8 @@ data AccountCreate = AccountCreate with
 handle : Party -> Request -> Update Response
 handle party (AccountCreate_ request) = createAccount party request
 
+findAccount = Account.findAccount
+
 createAccount : Party -> AccountCreate -> Update Response
 createAccount bank request = do
     let account = Account.Model with

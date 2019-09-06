@@ -1,0 +1,13 @@
+daml 1.2
+
+module Test.Com.Banking.TransferOrder.Model where
+
+import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
+import Main.Com.Banking.Utils.Logger
+import Main.Com.Banking.Utils.IndexKeys
+
+indexConversionsTest : Scenario ()
+indexConversionsTest = do
+    party <- getParty "party"
+    submit party do log party $ show $ idToIndexValue (0, ("1", "2"))
+    submit party do log party $ show $ ((indexValueToId "Idx 0 AccountId AccountNumber 1 BankId 2") : Optional TransferOrder.K)

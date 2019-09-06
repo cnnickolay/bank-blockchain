@@ -2,5 +2,15 @@ daml 1.2
 
 module Main.Com.Banking.TransferOrder.Service where
 
-createTransferOrder : Party -> Text -> Text -> Text -> Text -> Decimal -> Text -> Update ()
+import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
+import Main.Com.Banking.TransferOrder.Persistence qualified as TransferOrder
+import Main.Com.Banking.Account.Service qualified as Account
+import Main.Com.Banking.Utils.IndexKeys (extractId)
+
+createTransferOrder : Party -> Text -> Text -> Text -> Text -> Decimal -> Text -> Update (ContractId TransferOrder.T)
 createTransferOrder party fromAccount fromBic toAccount toBic amount description = do
+    accountFrom <- snd <$> Account.findAccount party (fromAccount, fromBic)
+    totalPendingOrders <- length <$> TransferOrder.findOrders party accountFrom
+    let nextId = totalPendingOrders + 1
+        order = TransferOrder.Model party nextId (extractId accountFrom) (toAccount, toBic) amount description
+    TransferOrder.saveOrder party order

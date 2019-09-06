@@ -8,6 +8,7 @@ module Main.Com.Banking.Utils.Persistence where
 import DA.List (delete)
 import Main.Com.Banking.Utils.IndexKeys
 import DA.Optional (catOptionals)
+import Main.Com.Banking.Utils.Logger qualified as Logger
 
 
 save_ : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
@@ -42,8 +43,11 @@ findInIndex : (IndexKeyConverter model id) => Party -> IndexKey -> Update [id]
 findInIndex owner key_ = do
     recordO <- findRecord owner key_
     case recordO of
-        None -> pure []
+        None -> do
+            Logger.log owner $ "No index found: " <> show key_
+            pure []
         Some (id, record) -> do
+            Logger.log owner $ "Index found: " <> show key_
             let values = catOptionals $ indexValueToId <$> record.values
             pure values
 
@@ -61,13 +65,15 @@ storeInIndex owner key_ value = do
     recordO <- findRecord owner key_
     case (recordO, idToIndexValue value) of
         (_, None) -> pure None
-        (None, Some indexV) -> saveRecord [indexV] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
-        (Some (recordId, record), Some indexV) | elem indexV record.values -> pure . Some $ (recordId, record)
+        (None, Some indexV) -> log indexV *> saveRecord [indexV] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
+        (Some (recordId, record), Some indexV) | elem indexV record.values -> log indexV *> (pure . Some $ (recordId, record))
         (Some (recordId, record), Some indexV) ->
-            archive recordId
+            log indexV
+            *> archive recordId
             >> saveRecord (record.values ++ [indexV])
             >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
   where
+    log v = Logger.log owner $ "Storing in index: " <> (show key_) <> " => " <> show v
     saveRecord values = create Record with owner, key_, values = values
 
 dropFromIndex : (IndexKeyConverter m a, Eq a) => Party -> a -> IndexKey -> Update (Optional (ContractId Record, Record))
