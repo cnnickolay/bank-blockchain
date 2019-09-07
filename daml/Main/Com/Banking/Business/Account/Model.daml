@@ -1,8 +1,8 @@
 daml 1.2
 
-module Main.Com.Banking.Account.Model where
+module Main.Com.Banking.Business.Account.Model where
 
-import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Utils.IndexKeys
 import DA.Text (splitOn)
 

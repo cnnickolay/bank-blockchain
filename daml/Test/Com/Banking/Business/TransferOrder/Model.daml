@@ -1,8 +1,8 @@
 daml 1.2
 
-module Test.Com.Banking.TransferOrder.Model where
+module Test.Com.Banking.Business.TransferOrder.Model where
 
-import Main.Com.Banking.TransferOrder.Model ()
+import Main.Com.Banking.Business.TransferOrder.Model ()
 import Main.Com.Banking.Utils.IndexKeys
 import Test.Com.Banking.Utils.TestUtils
 

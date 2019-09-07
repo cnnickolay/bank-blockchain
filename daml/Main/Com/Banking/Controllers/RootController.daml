@@ -1,8 +1,8 @@
 daml 1.2
 
-module Main.Com.Banking.RootContract where
+module Main.Com.Banking.Controllers.RootContract where
 
-import Main.Com.Banking.Bank.Service qualified as Bank
+import Main.Com.Banking.Business.Bank.Service qualified as Bank
 
 template RootContract
   with

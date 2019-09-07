@@ -1,9 +1,9 @@
 daml 1.2
 
-module Main.Com.Banking.TransferOrder.Persistence where
+module Main.Com.Banking.Business.TransferOrder.Persistence where
 
-import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
-import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.Business.TransferOrder.Model qualified as TransferOrder
+import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Utils.IndexKeys
 import Main.Com.Banking.Utils.Persistence
 

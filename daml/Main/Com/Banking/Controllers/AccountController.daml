@@ -1,10 +1,10 @@
 daml 1.2
 
-module Main.Com.Banking.Account.Controller where
+module Main.Com.Banking.Controllers.AccountController where
 
-import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.Business.Account.Model qualified as Account
 
-template Controller
+template AccountController
   with
     bank: Party
     accountOwner: Party

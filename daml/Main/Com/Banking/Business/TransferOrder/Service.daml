@@ -1,11 +1,11 @@
 daml 1.2
 
-module Main.Com.Banking.TransferOrder.Service where
+module Main.Com.Banking.Business.TransferOrder.Service where
 
-import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
-import Main.Com.Banking.TransferOrder.Persistence qualified as TransferOrder
-import Main.Com.Banking.Account.Model qualified as Account
-import Main.Com.Banking.Account.Persistence qualified as Account
+import Main.Com.Banking.Business.TransferOrder.Model qualified as TransferOrder
+import Main.Com.Banking.Business.TransferOrder.Persistence qualified as TransferOrder
+import Main.Com.Banking.Business.Account.Model qualified as Account
+import Main.Com.Banking.Business.Account.Persistence qualified as Account
 import DA.Action (unless)
 import Main.Com.Banking.Utils.Sequence qualified as Seq
 

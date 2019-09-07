@@ -1,10 +1,10 @@
 daml 1.2
 
-module Main.Com.Banking.Account.Persistence where
+module Main.Com.Banking.Business.Account.Persistence where
 
 import Main.Com.Banking.Utils.IndexKeys qualified as Index
-import Main.Com.Banking.Account.Model qualified as Account
-import Main.Com.Banking.Bank.Model qualified as Bank
+import Main.Com.Banking.Business.Account.Model qualified as Account
+import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Utils.Persistence
 
 allIndex = (Index.Account, [(Index.All, "")])

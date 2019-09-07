@@ -1,12 +1,11 @@
 daml 1.2
 
-module Main.Com.Banking.Account.Service where
+module Main.Com.Banking.Business.Account.Service where
 
-import Main.Com.Banking.Account.Controller qualified as Account
-import Main.Com.Banking.Account.Persistence qualified as Account
-import Main.Com.Banking.Account.Model qualified as Account
-import Main.Com.Banking.Bank.Model qualified as Bank
-import Main.Com.Banking.Utils.IndexKeys
+-- import Main.Com.Banking.Account.Controller qualified as Account
+import Main.Com.Banking.Business.Account.Persistence qualified as Account
+import Main.Com.Banking.Business.Account.Model qualified as Account
+import Main.Com.Banking.Business.Bank.Model qualified as Bank
 
 data Request
   = AccountCreate_ AccountCreate
@@ -38,7 +37,7 @@ createAccount bank request = do
           amount = request.initialAmount
           bankId = request.bankId
     response <- AccountCreated <$> (Account.save bank account *> (pure account))
-    create $ Account.Controller with bank, accountOwner = request.owner, accountId = extractId account
+    -- create $ Account.Controller with bank, accountOwner = request.owner, accountId = extractId account
     pure response
 
 findAccountsByBank = Account.findAccountsByBank

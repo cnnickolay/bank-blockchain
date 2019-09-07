@@ -1,0 +1,38 @@
+daml 1.2
+
+module Test.Com.Banking.Business.Bank.Service where
+
+import Main.Com.Banking.Business.Bank.Service qualified as Bank
+import Main.Com.Banking.Business.Bank.Model qualified as Bank
+import Test.Com.Banking.Utils.TestUtils
+import Main.Com.Banking.Utils.Common ((<<$>>))
+import Main.Com.Banking.Business.Account.Service qualified as Account
+
+bankCreationTest : Scenario ()
+bankCreationTest = do
+    master <- getParty("master")
+
+    -- bank creation
+    submit master do
+        Bank.BankCreated bank <- Bank.createBank master $ Bank.CreateBank master "test bank" "bic"
+        assertMsg "Unexpected bank stored" $ bank == (Bank.Model master "test bank" "bic")
+        [bank] === (snd <<$>> (Bank.findAllBanks master))
+
+    -- bank deletion
+    submit master do
+        Bank.BankDeleted bank <- Bank.deleteBank master $ Bank.DeleteBank master "bic"
+        [] === (snd <<$>> (Bank.findAllBanks master))
+
+shouldNotBeAbleToDeleteBankIfAccountExists : Scenario ()
+shouldNotBeAbleToDeleteBankIfAccountExists = do
+    master <- getParty("master")
+
+    -- bank creation
+    submit master do
+        Bank.BankCreated bank <- Bank.createBank master $ Bank.CreateBank master "test bank" "bic"
+        Account.AccountCreated account <- Account.createAccount master $ Account.AccountCreate master "account" "1111111" 5.0 bank.bic
+        [account] === (snd <<$>> Account.findAccountsByBank master "bic")
+
+    -- can't delete bank if accounts exist
+    submitMustFail master do
+        Bank.deleteBank master $ Bank.DeleteBank master "bic"
