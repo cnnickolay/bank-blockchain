@@ -35,7 +35,7 @@ createAccount bank request = do
           owner = bank
           name = request.name
           accountNumber = request.accountNumber
-          initialAmount = request.initialAmount
+          amount = request.initialAmount
           bankId = request.bankId
     response <- AccountCreated <$> (Account.save bank account *> (pure account))
     create $ Account.Controller with bank, accountOwner = request.owner, accountId = extractId account

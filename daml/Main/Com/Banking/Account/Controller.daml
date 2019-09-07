@@ -3,7 +3,6 @@ daml 1.2
 module Main.Com.Banking.Account.Controller where
 
 import Main.Com.Banking.Account.Model qualified as Account
-import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
 
 template Controller
   with

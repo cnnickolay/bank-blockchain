@@ -15,7 +15,7 @@ template Model
     owner: Party
     name: Text
     accountNumber: Text
-    initialAmount: Decimal
+    amount: Decimal
     bankId: Bank.K
   where
     signatory owner

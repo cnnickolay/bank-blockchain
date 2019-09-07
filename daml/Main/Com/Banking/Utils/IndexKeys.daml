@@ -26,6 +26,8 @@ class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverte
     idToIndexValue : id -> Optional IndexValue
     indexValueToId : IndexValue -> Optional id
     extractId : model -> id
+    id : model -> id
+    id = extractId
 
 class IndexedFields a where
     indexes : a -> [IndexKey]

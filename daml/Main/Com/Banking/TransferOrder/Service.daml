@@ -4,13 +4,22 @@ module Main.Com.Banking.TransferOrder.Service where
 
 import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
 import Main.Com.Banking.TransferOrder.Persistence qualified as TransferOrder
-import Main.Com.Banking.Account.Service qualified as Account
-import Main.Com.Banking.Utils.IndexKeys (extractId)
+import Main.Com.Banking.Account.Model qualified as Account
+import Main.Com.Banking.Account.Persistence qualified as Account
+import DA.Action (unless)
 
-createTransferOrder : Party -> Text -> Text -> Text -> Text -> Decimal -> Text -> Update (ContractId TransferOrder.T)
-createTransferOrder party fromAccount fromBic toAccount toBic amount description = do
-    accountFrom <- snd <$> Account.findAccount party (fromAccount, fromBic)
-    totalPendingOrders <- length <$> TransferOrder.findOrders party accountFrom
+createTransferOrder : Party -> Account.K -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T)
+createTransferOrder party fromAccountId toAccountId amount description = do
+    availableBalance <- availableBalance party fromAccountId
+    unless (availableBalance >= amount) $ abort "Insufficient balance"
+    totalPendingOrders <- length <$> TransferOrder.findOrders party fromAccountId
     let nextId = totalPendingOrders + 1
-        order = TransferOrder.Model party nextId (extractId accountFrom) (toAccount, toBic) amount description
+        order = TransferOrder.Model party nextId fromAccountId toAccountId amount description
     TransferOrder.saveOrder party order
+
+availableBalance : Party -> Account.K -> Update Decimal
+availableBalance owner accountId = do
+    fromAccount <- snd <$> Account.findAccount owner accountId
+    lockedBalance <- sum . (fmap ((.amount) . snd)) <$> TransferOrder.findOrders owner accountId
+    let availableBalance = fromAccount.amount - lockedBalance
+    pure availableBalance

@@ -8,12 +8,12 @@ import Main.Com.Banking.Utils.IndexKeys
 import Main.Com.Banking.Utils.Persistence
 
 instance IndexedFields TransferOrder.T where
-    indexes TransferOrder.Model{fromAccount=(accNum, bic)} = [orders accNum bic]
+    indexes TransferOrder.Model{fromAccount=(accNum, bic)} = [orders (accNum, bic)]
 
-orders accNum bic = (TransferOrder, [(AccountNumber, accNum), (BankId, bic)])
+orders (accNum, bic) = (TransferOrder, [(AccountNumber, accNum), (BankId, bic)])
 
-findOrders : Party -> Account.T -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
-findOrders party Account.Model{accountNumber, bankId} = findInIndexAndFetch (orders accountNumber bankId) party
+findOrders : Party -> Account.K -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
+findOrders party accountId = findInIndexAndFetch (orders accountId) party
 
 saveOrder : Party -> TransferOrder.T -> Update (ContractId TransferOrder.T)
 saveOrder = save_

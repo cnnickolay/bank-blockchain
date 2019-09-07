@@ -5,16 +5,39 @@ module Test.Com.Banking.TransferOrder.Service where
 import Main.Com.Banking.TransferOrder.Service qualified as TransferOrder
 import Main.Com.Banking.Bank.Service qualified as Bank
 import Main.Com.Banking.Account.Service qualified as Account
+import Main.Com.Banking.Utils.IndexKeys
 
 addingMultipleOrders : Scenario ()
 addingMultipleOrders = do
     master <- getParty "master"
 
+    (bank, account1, account2) <- bootstrap master
+
+    submit master do
+        TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
+        TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
+    pure ()
+
+unableToCreateOrderIfAvailableBalanceInsufficient : Scenario ()
+unableToCreateOrderIfAvailableBalanceInsufficient = do
+    master <- getParty "master"
+
+    (bank, account1, account2) <- bootstrap master
+
+    submit master do
+        TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
+        TransferOrder.createTransferOrder master (id account1) (id account2) 4.0 ""
+
+    submitMustFail master do
+        TransferOrder.createTransferOrder master (id account1) (id account2) 2.0 ""
+
+    submit master do
+        TransferOrder.createTransferOrder master (id account1) (id account2) 1.0 ""
+    pure ()
+
+bootstrap master =
     submit master do
         Bank.BankCreated bank <- Bank.createBank master $ Bank.CreateBank master "bank1" "0000000"
         Account.AccountCreated account1 <- Account.createAccount master $ Account.AccountCreate master "account1" "111111" 10.0 bank.bic
         Account.AccountCreated account2 <- Account.createAccount master $ Account.AccountCreate master "account2" "222222" 10.0 bank.bic
-        TransferOrder.createTransferOrder master account1.accountNumber account1.bankId account2.accountNumber account2.bankId 5.0 ""
-        TransferOrder.createTransferOrder master account1.accountNumber account1.bankId account2.accountNumber account2.bankId 5.0 ""
-        TransferOrder.createTransferOrder master account1.accountNumber account1.bankId account2.accountNumber account2.bankId 5.0 ""
-    pure ()
+        pure (bank, account1, account2)

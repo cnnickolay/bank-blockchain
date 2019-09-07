@@ -21,6 +21,8 @@ class (Eq a, Show a, CanAbort m) => Assertion m a where
 
     isEqual : a -> m a -> m Bool
 
+(===^) a b = a === (pure b)
+
 instance (Eq a, Show a) => Assertion Scenario a where
     isEqual a b = (a == ) <$> b
 
