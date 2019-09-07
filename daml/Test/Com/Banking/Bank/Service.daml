@@ -33,7 +33,7 @@ shouldNotBeAbleToDeleteBankIfAccountExists : Scenario ()
 shouldNotBeAbleToDeleteBankIfAccountExists = do
     creator <- getParty("creator")
     bankOwner <- getParty("bankOwner")
-    accountOwner <- getParty("bankOwner")
+    accountOwner <- getParty("accountOwner")
 
     -- bank creation
     bank <- submit creator do

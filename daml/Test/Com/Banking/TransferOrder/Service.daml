@@ -3,9 +3,12 @@ daml 1.2
 module Test.Com.Banking.TransferOrder.Service where
 
 import Main.Com.Banking.TransferOrder.Service qualified as TransferOrder
+import Main.Com.Banking.TransferOrder.Model qualified as TransferOrder
 import Main.Com.Banking.Bank.Service qualified as Bank
 import Main.Com.Banking.Account.Service qualified as Account
 import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Utils.Common
+import Test.Com.Banking.Utils.TestUtils
 
 addingMultipleOrders : Scenario ()
 addingMultipleOrders = do
@@ -24,15 +27,31 @@ unableToCreateOrderIfAvailableBalanceInsufficient = do
 
     (bank, account1, account2) <- bootstrap master
 
-    submit master do
+    order <- submit master do
         TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
-        TransferOrder.createTransferOrder master (id account1) (id account2) 4.0 ""
+        TransferOrder.createTransferOrder master (id account1) (id account2) 4.0 "" >>= (fetch . fst)
 
     submitMustFail master do
         TransferOrder.createTransferOrder master (id account1) (id account2) 2.0 ""
 
     submit master do
-        TransferOrder.createTransferOrder master (id account1) (id account2) 1.0 ""
+        TransferOrder.cancelTransferOrder master (id order)
+        TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
+    pure ()
+
+executeOrder : Scenario ()
+executeOrder = do
+    master <- getParty "master"
+
+    (bank, account1, account2) <- bootstrap master
+
+    submit master do
+        order <- snd <$> TransferOrder.createTransferOrder master (id account1) (id account2) 5.0 ""
+        [order] === (snd <<$>> TransferOrder.findActiveOrders master (id account1))
+        TransferOrder.executeOrder master (id order)
+        [] === (snd <<$>> TransferOrder.findActiveOrders master (id account1))
+        [order with state = TransferOrder.Executed] === (snd <<$>> TransferOrder.findExecutedOrders master (id account1))
+
     pure ()
 
 bootstrap master =

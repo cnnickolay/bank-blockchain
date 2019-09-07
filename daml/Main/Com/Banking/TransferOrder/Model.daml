@@ -10,6 +10,12 @@ import DA.List (intersperse)
 type T = Model
 type K = (Int, Account.K)
 
+data State
+  = Active
+  | Cancelled
+  | Executed
+  deriving (Show, Eq)
+
 template Model
   with
     accountOwner: Party
@@ -18,6 +24,7 @@ template Model
     toAccount: Account.K
     amount: Decimal
     description: Text
+    state: State
   where
     signatory accountOwner
     ensure amount > 0.0

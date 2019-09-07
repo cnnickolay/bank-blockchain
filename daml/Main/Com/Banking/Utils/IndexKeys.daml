@@ -20,6 +20,7 @@ data Field
   | LastName
   | BankId
   | AccountNumber
+  | TransferOrderState
     deriving (Eq, Show)
 
 class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverter model id | id -> model, model -> id where

@@ -9,19 +9,41 @@ import Main.Com.Banking.Account.Persistence qualified as Account
 import DA.Action (unless)
 import Main.Com.Banking.Utils.Sequence qualified as Seq
 
-createTransferOrder : Party -> Account.K -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T)
+createTransferOrder : Party -> Account.K -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T, TransferOrder.T)
 createTransferOrder party fromAccountId toAccountId amount description = do
     availableBalance <- availableBalance party fromAccountId
     unless (availableBalance >= amount) $ abort "Insufficient balance"
-    totalPendingOrders <- length <$> TransferOrder.findOrders party fromAccountId
+    totalPendingOrders <- length <$> TransferOrder.findActiveOrders party fromAccountId
     nextId <- Seq.nextNumber party Seq.TransferOrder
-    let order = TransferOrder.Model party nextId fromAccountId toAccountId amount description
-    TransferOrder.saveOrder party order
+    let order = TransferOrder.Model party nextId fromAccountId toAccountId amount description TransferOrder.Active
+    (,order) <$> TransferOrder.saveOrder party order
 
 availableBalance : Party -> Account.K -> Update Decimal
 availableBalance owner accountId = do
     fromAccount <- snd <$> Account.findAccount owner accountId
-    lockedBalance <- sum . (fmap ((.amount) . snd)) <$> TransferOrder.findOrders owner accountId
+    lockedBalance <- sum . fmap ((.amount) . snd) <$> TransferOrder.findActiveOrders owner accountId
     let availableBalance = fromAccount.amount - lockedBalance
     pure availableBalance
 
+cancelTransferOrder : Party -> TransferOrder.K -> Update (ContractId TransferOrder.T)
+cancelTransferOrder party transferOrderId = do
+    transferOrder <- snd <$> TransferOrder.findOrder party transferOrderId
+    TransferOrder.orderCancelled party transferOrder
+
+executeOrder : Party -> TransferOrder.K -> Update ()
+executeOrder party transferOrderId =
+    findOrder >>= executeOrder >>= incrementToAccount >>= decrementFromAccount
+  where
+    findOrder = snd <$> TransferOrder.findOrder party transferOrderId
+    executeOrder order = TransferOrder.orderExecuted party order >> pure order
+    incrementToAccount order = do
+        (toAccountKey, toAccount) <- Account.findAccount party order.toAccount
+        archive toAccountKey >> create toAccount with amount = toAccount.amount + order.amount
+        pure order
+    decrementFromAccount order = do
+        (fromAccountKey, fromAccount) <- Account.findAccount party order.fromAccount
+        archive fromAccountKey >> create fromAccount with amount = fromAccount.amount - order.amount
+        pure ()
+
+findActiveOrders = TransferOrder.findActiveOrders
+findExecutedOrders = TransferOrder.findExecutedOrders

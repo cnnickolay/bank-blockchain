@@ -26,6 +26,13 @@ drop_ owner model = dropModel >> dropIndexes >> pure ()
         dropModel = ((fst <$> (find_ owner id)): Update (ContractId model)) >>= archive
         dropIndexes = mapA (dropFromIndex owner id) indexes_
 
+update_ : forall oldModel newModel id. (TemplateKey oldModel (Party, id),
+                                        IndexedFields oldModel, Eq id,
+                                        IndexKeyConverter oldModel id,
+                                        IndexedFields newModel, Eq id,
+                                        IndexKeyConverter newModel id) => Party -> oldModel -> newModel -> Update (ContractId newModel)
+update_ owner oldModel newModel = drop_ owner oldModel >> save_ owner newModel
+
 findInIndexAndFetch : IndexKeyConverter model id => IndexKey -> Party -> Update [(ContractId model, model)]
 findInIndexAndFetch indexKey party = allIdsInIndex >>= (\ids -> (mapA $ findContractByKey party) ids)
   where
