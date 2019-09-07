@@ -7,14 +7,15 @@ import Main.Com.Banking.TransferOrder.Persistence qualified as TransferOrder
 import Main.Com.Banking.Account.Model qualified as Account
 import Main.Com.Banking.Account.Persistence qualified as Account
 import DA.Action (unless)
+import Main.Com.Banking.Utils.Sequence qualified as Seq
 
 createTransferOrder : Party -> Account.K -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T)
 createTransferOrder party fromAccountId toAccountId amount description = do
     availableBalance <- availableBalance party fromAccountId
     unless (availableBalance >= amount) $ abort "Insufficient balance"
     totalPendingOrders <- length <$> TransferOrder.findOrders party fromAccountId
-    let nextId = totalPendingOrders + 1
-        order = TransferOrder.Model party nextId fromAccountId toAccountId amount description
+    nextId <- Seq.nextNumber party Seq.TransferOrder
+    let order = TransferOrder.Model party nextId fromAccountId toAccountId amount description
     TransferOrder.saveOrder party order
 
 availableBalance : Party -> Account.K -> Update Decimal
@@ -23,3 +24,4 @@ availableBalance owner accountId = do
     lockedBalance <- sum . (fmap ((.amount) . snd)) <$> TransferOrder.findOrders owner accountId
     let availableBalance = fromAccount.amount - lockedBalance
     pure availableBalance
+

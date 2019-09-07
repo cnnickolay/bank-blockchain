@@ -10,7 +10,6 @@ import Main.Com.Banking.Utils.IndexKeys
 import DA.Optional (catOptionals)
 import Main.Com.Banking.Utils.Logger qualified as Logger
 
-
 save_ : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
 save_ owner a = do
     mapA (\index -> storeInIndex owner index pk) indexes_

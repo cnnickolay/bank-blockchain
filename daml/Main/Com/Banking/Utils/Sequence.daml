@@ -1,0 +1,29 @@
+daml 1.2
+
+module Main.Com.Banking.Utils.Sequence where
+
+data SequenceType
+  = TransferOrder
+  | TransferRequest
+  deriving (Eq, Show)
+
+template Model
+  with
+    owner: Party
+    lastNumber: Int
+    sequenceType: SequenceType
+  where
+    signatory owner
+    key (owner, sequenceType): (Party, SequenceType)
+    maintainer key._1
+
+nextNumber : Party -> SequenceType -> Update Int
+nextNumber owner sequenceType = do
+    contractO <- lookupByKey @Model (owner, sequenceType)
+    case contractO of
+        Some contractKey -> do
+            contract <- fetch contractKey
+            let newNumber = contract.lastNumber + 1
+            archive contractKey >> create (contract with lastNumber = newNumber)
+            pure newNumber
+        None -> create (Model owner 1 sequenceType) *> pure 1
