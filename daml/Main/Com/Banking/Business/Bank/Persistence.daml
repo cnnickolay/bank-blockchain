@@ -2,7 +2,7 @@ daml 1.2
 
 module Main.Com.Banking.Business.Bank.Persistence where
 
-import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Index.Model
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Utils.Persistence
 

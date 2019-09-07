@@ -6,7 +6,7 @@ daml 1.2
 module Main.Com.Banking.Utils.Persistence where
 
 import DA.List (delete)
-import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Index.Model
 import DA.Optional (catOptionals)
 import Main.Com.Banking.Utils.Logger qualified as Logger
 

@@ -7,10 +7,9 @@ module Main.Com.Banking.Index.Service where
 import Main.Com.Banking.Index.Model
 import DA.List (delete)
 
-findInIndex : forall a b. (TypeKey a, TypeKey b) => Party -> a -> Update (Optional (ContractId Record, Record, [b]))
+findInIndex : forall a. (TypeKey a) => Party -> IndexKey -> Update (Optional (ContractId Record, Record, [a]))
 findInIndex owner key_ = do
-    let aKey = toKey key_
-    contractId <- lookupByKey @Record (owner, aKey)
+    contractId <- lookupByKey @Record (owner, key_)
     case contractId of
         None -> pure None
         Some id -> do
@@ -18,9 +17,9 @@ findInIndex owner key_ = do
             let values = fromKey <$> contract.values
             pure $ Some (id, contract, values)
 
-storeInIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (ContractId Record, Record)
+storeInIndex : forall a. (TypeKey a, Eq a) => Party -> IndexKey -> a -> Update (ContractId Record, Record)
 storeInIndex owner key_ value = do
-    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
+    record: (Optional (ContractId Record, Record, [a])) <- findInIndex owner key_
     case record of
         None -> saveRecord [toKey value]
                 >>= (\cId -> (cId, ) <$> fetch cId)
@@ -30,14 +29,11 @@ storeInIndex owner key_ value = do
             >> saveRecord (record.values ++ [toKey value])
             >>= (\cId -> (cId, ) <$> fetch cId)
   where
-    saveRecord values = create Record with
-                    owner
-                    key_ = toKey key_
-                    values = values
+    saveRecord values = create Record with owner, key_, values = values
 
-dropFromIndex : forall a b. (TypeKey a, TypeKey b, Eq b) => Party -> a -> b -> Update (Optional (ContractId Record, Record))
+dropFromIndex : forall a. (TypeKey a, Eq a) => Party -> IndexKey -> a -> Update (Optional (ContractId Record, Record))
 dropFromIndex owner key_ value = do
-    record: (Optional (ContractId Record, Record, [b])) <- findInIndex owner key_
+    record: (Optional (ContractId Record, Record, [a])) <- findInIndex owner key_
     case record of
         None -> pure None
         Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
@@ -48,7 +44,4 @@ dropFromIndex owner key_ value = do
                         )
         Some (recordId, record, _) -> pure . Some $ (recordId, record)
   where
-    saveRecord values = create Record with
-                    owner
-                    key_ = toKey key_
-                    values = values
+    saveRecord values = create Record with owner, key_, values = values
