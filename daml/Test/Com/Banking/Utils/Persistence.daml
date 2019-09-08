@@ -3,7 +3,7 @@ daml 1.2
 module Test.Com.Banking.Utils.Persistence where
 
 import Main.Com.Banking.Utils.Persistence qualified as Persistence
-import Main.Com.Banking.Utils.IndexKeys
+import Main.Com.Banking.Index.Model
 import Test.Com.Banking.Utils.TestUtils
 import Main.Com.Banking.Utils.Common ((<<$>>))
 

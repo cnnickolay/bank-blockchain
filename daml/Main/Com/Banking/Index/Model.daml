@@ -8,14 +8,6 @@ module Main.Com.Banking.Index.Model where
 type IndexKey = (Table, [(Field, Text)])
 type IndexValue = Text
 
-class TypeKey a where
-    toKey : a -> Text
-    fromKey : Text -> a
-
-instance TypeKey Text where
-    toKey = identity
-    fromKey = identity
-
 data Table
   = Bank
   | Account

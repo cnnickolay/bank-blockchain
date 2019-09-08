@@ -5,13 +5,28 @@ module Test.Com.Banking.Index.Service where
 import Main.Com.Banking.Index.Service
 import DA.Tuple (thd3)
 import Test.Com.Banking.Utils.TestUtils
+import Main.Com.Banking.Index.Model
+
+template TestTemplate
+  with
+    owner : Party
+    k : Text
+  where
+    signatory owner
+    key (owner, k) : (Party, Text)
+    maintainer key._1
+
+instance IndexKeyConverter TestTemplate Text where
+    idToIndexValue = Some
+    indexValueToId = Some
+    extractId = const ""
 
 findTest : Scenario ()
 findTest = do
     party <- getParty "Party"
 
-    let myKey1 = "1"
-        myKey2 = "2"
+    let myKey1 = (Bank, [(All, "")])
+        myKey2 = (Account, [(All, "")])
 
     submit party do
         -- |||| Testing index 1
@@ -55,5 +70,5 @@ findTest = do
         dropFromIndex party myKey1 "22"
         None === find_ party myKey1
 
-find_ : Party -> Text -> Update (Optional [Text])
+find_ : Party -> IndexKey -> Update (Optional [Text])
 find_ party a = fmap thd3 <$> findInIndex party a
