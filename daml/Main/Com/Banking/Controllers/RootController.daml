@@ -1,10 +1,10 @@
 daml 1.2
 
-module Main.Com.Banking.Controllers.RootContract where
+module Main.Com.Banking.Controllers.RootController where
 
 import Main.Com.Banking.Business.Bank.Service qualified as Bank
 
-template RootContract
+template RootController
   with
     operator: Party
   where
