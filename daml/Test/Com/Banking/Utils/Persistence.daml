@@ -20,9 +20,9 @@ template TestTemplate
     maintainer key._1
 
 instance IndexKeyConverter TestTemplate Text where
-    idToIndexValue = Some
-    indexValueToId = Some
     extractId = (.id)
+
+template instance RecordTestTemplate = Record Text
 
 saveTest : Scenario ()
 saveTest = do

@@ -6,33 +6,35 @@ module Main.Com.Banking.Index.Service where
 
 import Main.Com.Banking.Index.Model
 import DA.List (delete)
-import DA.Optional (catOptionals, fromOptional)
 
-findInIndex : forall model id. (IndexKeyConverter model id) => Party -> IndexKey -> Update (Optional (ContractId Record, Record, [id]))
+findInIndex : forall model id. (RecordInstance id, IndexKeyConverter model id)
+                => Party -> IndexKey -> Update (Optional (ContractId (Record id), Record id, [id]))
 findInIndex owner key_ = do
-    contractId <- lookupByKey @Record (owner, key_)
+    contractId <- lookupByKey @(Record id) (owner, key_)
     case contractId of
         None -> pure None
         Some id -> do
             contract <- fetch id
-            let values = catOptionals $ indexValueToId <$> contract.values
+            let values = contract.values
             pure $ Some (id, contract, values)
 
-storeInIndex : forall model id. (IndexKeyConverter model id, Eq id) => Party -> IndexKey -> id -> Update (ContractId Record, Record)
+storeInIndex : forall model id. (RecordInstance id, IndexKeyConverter model id, Eq id)
+                => Party -> IndexKey -> id -> Update (ContractId (Record id), Record id)
 storeInIndex owner key_ value = do
     record <- findInIndex owner key_
     case record of
-        None -> saveRecord (catOptionals [idToIndexValue value])
+        None -> saveRecord [value]
                 >>= (\cId -> (cId, ) <$> fetch cId)
         Some (recordId, record, values) | elem value values -> pure (recordId, record)
         Some (recordId, record, _) ->
             archive recordId
-            >> saveRecord (record.values ++ catOptionals [idToIndexValue value])
+            >> saveRecord (record.values ++ [value])
             >>= (\cId -> (cId, ) <$> fetch cId)
   where
     saveRecord values = create Record with owner, key_, values = values
 
-dropFromIndex : forall model id. (IndexKeyConverter model id, Eq id) => Party -> IndexKey -> id -> Update (Optional (ContractId Record, Record))
+dropFromIndex : forall model id. (RecordInstance id, IndexKeyConverter model id, Eq id)
+                => Party -> IndexKey -> id -> Update (Optional (ContractId (Record id), Record id))
 dropFromIndex owner key_ value = do
     record <- findInIndex owner key_
     case record of
@@ -40,7 +42,7 @@ dropFromIndex owner key_ value = do
         Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
         Some (recordId, record, values) | elem value values ->
             Some <$>    ( archive recordId
-                            >> saveRecord (delete (fromOptional "" (idToIndexValue value)) record.values)
+                            >> saveRecord (delete value record.values)
                             >>= (\cId -> (cId, ) <$> fetch cId)
                         )
         Some (recordId, record, _) -> pure . Some $ (recordId, record)

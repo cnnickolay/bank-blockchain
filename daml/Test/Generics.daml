@@ -1,0 +1,43 @@
+daml 1.2
+
+module Test.Generics where
+
+type IndexKey = (Table, [(Field, Text)])
+type IndexValue = Text
+
+data Table
+  = Bank
+  | Account
+  | TransferOrder
+    deriving (Eq, Show)
+
+data Field
+  = All
+  | Name
+  | LastName
+  | BankId
+  | AccountNumber
+  | TransferOrderState
+    deriving (Eq, Show)
+
+data A = A Int
+
+template Record value
+  with
+    owner: Party
+    key_: IndexKey
+    values: [value]
+  where
+    signatory owner
+
+    key (owner, key_): (Party, IndexKey)
+    maintainer key._1
+
+template instance RecordBank = Record A
+
+test : Scenario ()
+test = do
+    party <- getParty "party"
+    let bank = A 8
+    submit party do create Record with owner = party, key_ = (Bank, [(Name, "")]), values = [bank]
+    pure ()

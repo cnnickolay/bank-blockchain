@@ -56,7 +56,7 @@ executeOrder = do
 
 bootstrap master =
     submit master do
-        Bank.BankCreated bank <- Bank.createBank master $ Bank.CreateBank master "bank1" "0000000"
+        bank <- Bank.createBank master "bank1" "0000000"
         Account.AccountCreated account1 <- Account.createAccount master $ Account.AccountCreate master "account1" "111111" 10.0 bank.bic
         Account.AccountCreated account2 <- Account.createAccount master $ Account.AccountCreate master "account2" "222222" 10.0 bank.bic
         pure (bank, account1, account2)

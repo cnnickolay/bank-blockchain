@@ -6,40 +6,21 @@ import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Business.Bank.Persistence qualified as Bank
 import Main.Com.Banking.Business.Account.Service qualified as Account
 
-data Request
-    = CreateBank_ CreateBank
-    | DeleteBank_ DeleteBank
-  deriving (Eq, Show)
-
-data Response
-    = BankCreated Bank.T
-    | BankDeleted Bank.T
-  deriving (Eq, Show)
-
-data CreateBank = CreateBank with bankOwner: Party, name: Text, bic: Bank.K deriving (Eq, Show)
-data DeleteBank = DeleteBank with bankOwner: Party, bic: Bank.K deriving (Eq, Show)
-
-handle : Party -> Request -> Update Response
-handle creator (CreateBank_ request) = createBank creator request
-handle creator (DeleteBank_ request) = deleteBank creator request
-
-createBank : Party -> CreateBank -> Update Response
-createBank creator CreateBank{bankOwner, name, bic} = do
+createBank : Party -> Text -> Bank.K -> Update Bank.T
+createBank creator name bic = do
     let bank = Bank.Model with owner = creator, name, bic
-    response <- BankCreated <$> (Bank.saveBank creator bank *> (pure bank))
-    -- create Bank.Controller with creator, bankOwner, bankId = bic
+    response <- Bank.saveBank creator bank *> (pure bank)
     pure response
 
-deleteBank : Party -> DeleteBank -> Update Response
-deleteBank creator DeleteBank{bankOwner, bic} = do
-    accounts <- Account.findAccountsByBank bankOwner bic
+deleteBank : Party -> Bank.K -> Update Bank.T
+deleteBank creator bic = do
+    accounts <- Account.findAccountsByBank creator bic
     case accounts of
         [] -> do
-            (bankCId, bank) <- fetchByKey @Bank.Model (bankOwner, bic)
-            -- controllerId <- fst <$> fetchByKey @Bank.Controller (bankOwner, bic)
+            (bankCId, bank) <- fetchByKey @Bank.Model (creator, bic)
             Bank.dropBank creator bank
             -- archive controllerId
-            pure $ BankDeleted bank
+            pure bank
         _ -> abort "Unable to delete bank when accounts still present"
 
 findAllBanks = Bank.findAllBanks

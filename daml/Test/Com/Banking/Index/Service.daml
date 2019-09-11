@@ -17,8 +17,6 @@ template TestTemplate
     maintainer key._1
 
 instance IndexKeyConverter TestTemplate Text where
-    idToIndexValue = Some
-    indexValueToId = Some
     extractId = const ""
 
 findTest : Scenario ()
@@ -69,6 +67,8 @@ findTest = do
 
         dropFromIndex party myKey1 "22"
         None === find_ party myKey1
+
+template instance RecordText = Record Text
 
 find_ : Party -> IndexKey -> Update (Optional [Text])
 find_ party a = fmap thd3 <$> findInIndex party a

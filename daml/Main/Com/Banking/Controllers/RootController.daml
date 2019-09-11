@@ -2,15 +2,8 @@ daml 1.2
 
 module Main.Com.Banking.Controllers.RootController where
 
-import Main.Com.Banking.Business.Bank.Service qualified as Bank
-
 template RootController
   with
     operator: Party
   where
     signatory operator
-
-    controller operator can
-      nonconsuming BankRequest : Bank.Response
-        with msg: Bank.Request
-        do Bank.handle operator msg

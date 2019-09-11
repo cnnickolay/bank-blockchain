@@ -12,8 +12,8 @@ createData = do
     account1Owner <- getParty "account1Owner"
     account2Owner <- getParty "account2Owner"
 
-    Bank.BankCreated bank <- submit master do
-        Bank.createBank master $ Bank.CreateBank bankOwner "bank1" "0000000"
+    bank <- submit master do
+        Bank.createBank master "bank1" "0000000"
 
     (account1, account2) <- submit bankOwner do
         Account.AccountCreated account1 <- Account.createAccount bankOwner $ Account.AccountCreate account1Owner "account1" "111111" 10.0 bank.bic

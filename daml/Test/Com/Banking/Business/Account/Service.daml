@@ -18,8 +18,8 @@ accountCreationTest = do
     accountBOwner <- getParty "accountBOwner"
 
     (bank1, bankA) <- submit master do
-        Bank.BankCreated bank1 <- Bank.createBank master $ Bank.CreateBank bank1Owner "test bank 1" "bic1"
-        Bank.BankCreated bankA <- Bank.createBank master $ Bank.CreateBank bankAOwner "test bank A" "bicA"
+        bank1 <- Bank.createBank master "test bank 1" "bic1"
+        bankA <- Bank.createBank master "test bank A" "bicA"
         pure (bank1, bankA)
 
     (account1, account2) <- submit bank1Owner do

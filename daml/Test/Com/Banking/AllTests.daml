@@ -5,7 +5,6 @@ module Test.Com.Banking.AllTests where
 import Test.Com.Banking.Business.Account.Service ()
 import Test.Com.Banking.Business.Bank.Service ()
 import Test.Com.Banking.Business.TransferOrder.Service ()
-import Test.Com.Banking.Business.TransferOrder.Model ()
 import Test.Com.Banking.Index.Service ()
 import Test.Com.Banking.Utils.Computation ()
 import Test.Com.Banking.Utils.Persistence ()

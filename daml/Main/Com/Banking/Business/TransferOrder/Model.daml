@@ -4,8 +4,6 @@ module Main.Com.Banking.Business.TransferOrder.Model where
 
 import Main.Com.Banking.Index.Model
 import Main.Com.Banking.Business.Account.Model qualified as Account
-import DA.Text (parseInt, implode, splitOn)
-import DA.List (intersperse)
 
 type T = Model
 type K = (Int, Account.K)
@@ -32,10 +30,6 @@ template Model
     maintainer key._1
 
 instance IndexKeyConverter Model K where
-    idToIndexValue (idx, accountId) = do
-        accountIdIdx <- idToIndexValue accountId
-        pure . implode $ intersperse " " ["Idx", show idx, "AccountId", accountIdIdx]
-    indexValueToId text = case splitOn " " text of
-        "Idx" :: idx :: "AccountId" :: accountId -> (,) <$> parseInt idx <*> indexValueToId (implode . intersperse " " $ accountId)
-        _ -> None
     extractId v = (v.idx, v.fromAccount)
+
+template instance RecordTransferOrder = Record K

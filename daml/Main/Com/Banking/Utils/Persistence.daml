@@ -7,10 +7,9 @@ module Main.Com.Banking.Utils.Persistence where
 
 import DA.List (delete)
 import Main.Com.Banking.Index.Model
-import DA.Optional (catOptionals)
 import Main.Com.Banking.Utils.Logger qualified as Logger
 
-save_ : (IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
+save_ : (RecordInstance id, IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
 save_ owner a = do
     mapA (\index -> storeInIndex owner index pk) indexes_
     create a
@@ -18,7 +17,7 @@ save_ owner a = do
     indexes_ = indexes a
     pk = extractId a
 
-drop_ : forall model id. (TemplateKey model (Party, id), IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update ()
+drop_ : forall model id. (RecordInstance id, TemplateKey model (Party, id), IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update ()
 drop_ owner model = dropModel >> dropIndexes >> pure ()
   where
         id = extractId model
@@ -26,17 +25,18 @@ drop_ owner model = dropModel >> dropIndexes >> pure ()
         dropModel = ((fst <$> (find_ owner id)): Update (ContractId model)) >>= archive
         dropIndexes = mapA (dropFromIndex owner id) indexes_
 
-update_ : forall oldModel newModel id. (TemplateKey oldModel (Party, id),
+update_ : forall oldModel newModel id. (RecordInstance id,
+                                        TemplateKey oldModel (Party, id),
                                         IndexedFields oldModel, Eq id,
                                         IndexKeyConverter oldModel id,
                                         IndexedFields newModel, Eq id,
                                         IndexKeyConverter newModel id) => Party -> oldModel -> newModel -> Update (ContractId newModel)
 update_ owner oldModel newModel = drop_ owner oldModel >> save_ owner newModel
 
-findInIndexAndFetch : IndexKeyConverter model id => IndexKey -> Party -> Update [(ContractId model, model)]
+findInIndexAndFetch : (RecordInstance id, IndexKeyConverter model id) => IndexKey -> Party -> Update [(ContractId model, model)]
 findInIndexAndFetch indexKey party = allIdsInIndex >>= (\ids -> (mapA $ findContractByKey party) ids)
   where
-    allIdsInIndex : IndexKeyConverter model id => Update [id]
+    allIdsInIndex : (RecordInstance id, IndexKeyConverter model id) => Update [id]
     allIdsInIndex = findInIndex party indexKey
 
 findContractByKey : IndexKeyConverter model id => Party -> id -> Update (ContractId model, model)
@@ -45,55 +45,51 @@ findContractByKey party indexValue = find_ party indexValue
 find_ : (TemplateKey model (Party, id)) => Party -> id -> Update (ContractId model, model)
 find_ party key_ = fetchByKey (party, key_)
 
-findInIndex : (IndexKeyConverter model id) => Party -> IndexKey -> Update [id]
+findInIndex : forall id model. (RecordInstance id, IndexKeyConverter model id) => Party -> IndexKey -> Update [id]
 findInIndex owner key_ = do
-    recordO <- findRecord owner key_
+    recordO: Optional (ContractId (Record id), Record id) <- findRecord owner key_
     case recordO of
         None -> do
             Logger.log owner $ "No index found: " <> show key_
             pure []
-        Some (id, record) -> do
+        Some (_, record) -> do
             Logger.log owner $ "Index found: " <> show key_
-            let values = catOptionals $ indexValueToId <$> record.values
-            pure values
+            pure record.values
 
-findRecord : Party -> IndexKey -> Update (Optional (ContractId Record, Record))
+findRecord : forall id. RecordInstance id => Party -> IndexKey -> Update (Optional (ContractId (Record id), Record id))
 findRecord owner key_ = do
-    contractId <- lookupByKey @Record (owner, key_)
+    contractId <- lookupByKey @(Record id) (owner, key_)
     case contractId of
         None -> pure None
         Some id -> do
             contract <- fetch id
             pure $ Some (id, contract)
 
-storeInIndex : (TemplateKey model (Party, id), IndexKeyConverter model id, Eq id) => Party -> IndexKey -> id -> Update (Optional (ContractId Record, Record))
+storeInIndex : (RecordInstance id, TemplateKey model (Party, id), IndexKeyConverter model id, Eq id)
+                => Party -> IndexKey -> id -> Update (Optional (ContractId (Record id), Record id))
 storeInIndex owner key_ value = do
     recordO <- findRecord owner key_
-    case (recordO, idToIndexValue value) of
-        (_, None) -> pure None
-        (None, Some indexV) -> log indexV *> saveRecord [indexV] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
-        (Some (recordId, record), Some indexV) | elem indexV record.values -> log indexV *> (pure . Some $ (recordId, record))
-        (Some (recordId, record), Some indexV) ->
-            log indexV
-            *> archive recordId
-            >> saveRecord (record.values ++ [indexV])
+    case recordO of
+        None -> saveRecord [value] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
+        Some (recordId, record) | elem value record.values -> (pure . Some $ (recordId, record))
+        Some (recordId, record) ->
+            archive recordId
+            >> saveRecord (record.values ++ [value])
             >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
   where
-    log v = Logger.log owner $ "Storing in index: " <> (show key_) <> " => " <> show v
     saveRecord values = create Record with owner, key_, values = values
 
-dropFromIndex : (IndexKeyConverter m a, Eq a) => Party -> a -> IndexKey -> Update (Optional (ContractId Record, Record))
+dropFromIndex : (RecordInstance id, IndexKeyConverter m id, Eq id) => Party -> id -> IndexKey -> Update (Optional (ContractId (Record id), Record id))
 dropFromIndex owner value key_ = do
     recordO <- findRecord owner key_
-    case (recordO, idToIndexValue value) of
-        (_, None) -> pure None
-        (None, Some _) -> pure None
-        (Some (recordId, record), Some indexV) | [v] <- record.values, v == indexV -> archive recordId *> pure None
-        (Some (recordId, record), Some indexV) | elem indexV record.values ->
+    case recordO of
+        None -> pure None
+        Some (recordId, record) | [v] <- record.values, v == value -> archive recordId *> pure None
+        Some (recordId, record) | elem value record.values ->
             Some <$>    ( archive recordId
-                            >> saveRecord (delete indexV record.values)
+                            >> saveRecord (delete value record.values)
                             >>= (\cId -> (cId, ) <$> fetch cId)
                         )
-        (Some (recordId, record), Some _) -> pure . Some $ (recordId, record)
+        Some (recordId, record) -> pure . Some $ (recordId, record)
   where
     saveRecord values = create Record with owner, key_, values = values

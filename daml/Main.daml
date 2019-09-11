@@ -1,2 +1,9 @@
 daml 1.2
 module Main where
+
+import Main.Com.Banking.Controllers.RootController
+
+bootstrap : Scenario (ContractId RootController)
+bootstrap = do
+    master <- getParty "master"
+    submit master do create RootController with operator = master
