@@ -16,8 +16,7 @@ template TestTemplate
     key (owner, k) : (Party, Text)
     maintainer key._1
 
-instance IndexKeyConverter TestTemplate Text where
-    extractId = const ""
+instance IndexKeyConverter TestTemplate Text
 
 findTest : Scenario ()
 findTest = do

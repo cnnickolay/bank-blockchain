@@ -19,8 +19,7 @@ template TestTemplate
     key (party, id) : (Party, Text)
     maintainer key._1
 
-instance IndexKeyConverter TestTemplate Text where
-    extractId = (.id)
+instance IndexKeyConverter TestTemplate Text
 
 template instance RecordTestTemplate = Record Text
 

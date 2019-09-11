@@ -18,7 +18,6 @@ template Model
     key (owner, bic): (Party, K)
     maintainer key._1
 
-instance IndexKeyConverter Model K where
-    extractId = (.bic)
+instance IndexKeyConverter Model K
 
 template instance RecordBank = Record K

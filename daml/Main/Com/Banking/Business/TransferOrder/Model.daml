@@ -29,7 +29,6 @@ template Model
     key (accountOwner, (idx, fromAccount)) : (Party, K)
     maintainer key._1
 
-instance IndexKeyConverter Model K where
-    extractId v = (v.idx, v.fromAccount)
+instance IndexKeyConverter Model K
 
 template instance RecordTransferOrder = Record K

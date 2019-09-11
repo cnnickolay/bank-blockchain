@@ -23,9 +23,8 @@ data Field
     deriving (Eq, Show)
 
 class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverter model id | id -> model, model -> id where
-    extractId : model -> id
     id : model -> id
-    id = extractId
+    id = snd . key
 
 class IndexedFields a where
     indexes : a -> [IndexKey]

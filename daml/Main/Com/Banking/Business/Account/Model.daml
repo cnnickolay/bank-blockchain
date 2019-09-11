@@ -21,7 +21,6 @@ template Model
     key (owner, (accountNumber, bankId)) : (Party, K)
     maintainer key._1
 
-instance IndexKeyConverter T K where
-    extractId v = (v.accountNumber, v.bankId)
+instance IndexKeyConverter T K
 
 template instance RecordAccount = Record K
