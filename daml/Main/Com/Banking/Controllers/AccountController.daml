@@ -6,13 +6,13 @@ import Main.Com.Banking.Business.Account.Model qualified as Account
 
 template AccountController
   with
-    bank: Party
+    master: Party
     accountOwner: Party
     accountId: Account.K
   where
-    signatory bank
+    signatory master
 
-    key (bank, accountId) : (Party, Account.K)
+    key (master, accountId) : (Party, Account.K)
     maintainer key._1
 
     -- controller accountOwner can

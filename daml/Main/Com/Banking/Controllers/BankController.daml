@@ -3,20 +3,31 @@ daml 1.2
 module Main.Com.Banking.Controllers.BankController where
 
 import Main.Com.Banking.Business.Account.Service qualified as Account
+import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
+import Main.Com.Banking.Controllers.AccountController qualified as Account
+import Main.Com.Banking.Index.Model
+
 
 template BankController
   with
-    creator: Party
+    master: Party
     bankOwner: Party
     bankId: Bank.K
   where
-    signatory creator
+    signatory master
 
-    key (creator, bankId) : (Party,  Bank.K)
+    key (master, bankId) : (Party,  Bank.K)
     maintainer key._1
 
     controller bankOwner can
-      nonconsuming AccountRequest : Account.Response
-        with command : Account.Request
-        do Account.handle bankOwner command
+      nonconsuming CreateAccont : Account.T
+        with
+          accountOwner : Party
+          name : Text
+          accountNumber : Text
+          initialAmount : Decimal
+        do
+          account <- Account.createAccount master name accountNumber initialAmount bankId
+          create $ Account.AccountController master accountOwner $ id account
+          pure account

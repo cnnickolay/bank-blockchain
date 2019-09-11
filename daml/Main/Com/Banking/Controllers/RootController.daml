@@ -2,8 +2,33 @@ daml 1.2
 
 module Main.Com.Banking.Controllers.RootController where
 
+import Main.Com.Banking.Controllers.BankController qualified as Bank
+import Main.Com.Banking.Business.Bank.Service qualified as Bank
+import Main.Com.Banking.Business.Bank.Model qualified as Bank
+import Main.Com.Banking.Index.Model
+
 template RootController
   with
-    operator: Party
+    master: Party
   where
-    signatory operator
+    signatory master
+
+    controller master can
+      CreateBank : Bank.T
+        with
+          bankOwner : Party
+          name : Text
+          bic : Bank.K
+        do
+          bank <- Bank.createBank master name bic
+          create Bank.BankController with master, bankOwner, bankId = id bank
+          pure bank
+
+      DeleteBank : ()
+        with
+          bic : Bank.K
+        do
+          controller_ <- fst <$> fetchByKey @Bank.BankController (master, bic)
+          archive controller_
+          Bank.deleteBank master bic
+          pure ()
