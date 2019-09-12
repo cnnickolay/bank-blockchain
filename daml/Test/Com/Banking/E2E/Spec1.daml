@@ -6,25 +6,31 @@ import Main.Com.Banking.Controllers.RootController qualified as RootController
 import Main.Com.Banking.Controllers.BankController qualified as BankController
 import Main.Com.Banking.Controllers.AccountController qualified as AccountController
 import Main.Com.Banking.Index.Model
+import Main.Com.Banking.Business.Account.Model qualified as Account
 
 spec1 : Scenario ()
 spec1 = do
     master <- getParty "master"
     bank1Party <- getParty "bank1Party"
-    bank1Account1Party <- getParty "bank1Account1Party"
-    bank1Account2Party <- getParty "bank1Account2Party"
+    account1Party <- getParty "bank1Account1Party"
+    account2Party <- getParty "bank1Account2Party"
 
     rootController <- master `submit` create $ RootController.Controller master
 
     (bank1, bank1Controller) <- master `submit` exercise rootController $ RootController.CreateBank bank1Party "bank1" "00000"
 
     (bank1Account1, bank1Account1Controller) <-
-        bank1Party `submit` exercise bank1Controller $ BankController.CreateAccount bank1Account1Party "nik acct" "00001" 10.0
+        bank1Party `submit` exercise bank1Controller $ BankController.CreateAccount account1Party "nik acct" "00001" 10.0
 
     (bank1Account2, bank1Account2Controller) <-
-        bank1Party `submit` exercise bank1Controller $ BankController.CreateAccount bank1Account2Party "vero acct" "00002" 10.0
+        bank1Party `submit` exercise bank1Controller $ BankController.CreateAccount account2Party "vero acct" "00002" 10.0
 
-    -- bank1Account1Party `submit` exercise bank1Account1Controller $
-    --     AccountController.CreateTransferOrder (id bank1Account1) (id bank1Account2) 5.0 "lunch"
+    account1Party `submit` fetchByKey @Account.Model (bank1Party, id bank1Account1)
+
+    account1Party `submit` exercise bank1Account1Controller $
+        AccountController.CreateTransferOrder (id bank1Account2) 5.0 "lunch"
+
+    account1Party `submitMustFail` exercise bank1Account1Controller $
+        AccountController.CreateTransferOrder (id bank1Account2) 6.0 "lunch"
 
     pure ()

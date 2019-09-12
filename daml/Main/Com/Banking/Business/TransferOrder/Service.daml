@@ -8,21 +8,21 @@ import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Business.Account.Persistence qualified as Account
 import DA.Action (unless)
 import Main.Com.Banking.Utils.Sequence qualified as Seq
+import Main.Com.Banking.Index.Model
 
-createTransferOrder : Party -> Account.K -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T, TransferOrder.T)
-createTransferOrder party fromAccountId toAccountId amount description = do
-    availableBalance <- availableBalance party fromAccountId
+createTransferOrder : Party -> Account.T -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T, TransferOrder.T)
+createTransferOrder party fromAccount toAccountId amount description = do
+    availableBalance <- availableBalance party fromAccount
     unless (availableBalance >= amount) $ abort "Insufficient balance"
-    totalPendingOrders <- length <$> TransferOrder.findActiveOrders party fromAccountId
+    totalPendingOrders <- length <$> TransferOrder.findActiveOrders party (id fromAccount)
     nextId <- Seq.nextNumber party Seq.TransferOrder
-    let order = TransferOrder.Model party nextId fromAccountId toAccountId amount description TransferOrder.Active
+    let order = TransferOrder.Model party nextId (id fromAccount) toAccountId amount description TransferOrder.Active
     (,order) <$> TransferOrder.saveOrder party order
 
-availableBalance : Party -> Account.K -> Update Decimal
-availableBalance owner accountId = do
-    fromAccount <- snd <$> Account.findAccount owner accountId
-    lockedBalance <- sum . fmap ((.amount) . snd) <$> TransferOrder.findActiveOrders owner accountId
-    let availableBalance = fromAccount.amount - lockedBalance
+availableBalance : Party -> Account.T -> Update Decimal
+availableBalance owner account = do
+    lockedBalance <- sum . fmap ((.amount) . snd) <$> TransferOrder.findActiveOrders owner (id account)
+    let availableBalance = account.amount - lockedBalance
     pure availableBalance
 
 cancelTransferOrder : Party -> TransferOrder.K -> Update (ContractId TransferOrder.T)

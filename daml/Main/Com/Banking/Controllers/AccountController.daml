@@ -13,6 +13,7 @@ template Controller
     accountId: Account.K
   where
     signatory master
+    observer accountOwner
 
     key (master, accountId) : (Party, Account.K)
     maintainer key._1
@@ -20,9 +21,9 @@ template Controller
     controller accountOwner can
       nonconsuming CreateTransferOrder : TransferOrder.T
         with
-          fromAccount: Account.K
           toAccount: Account.K
           amount: Decimal
           description: Text
         do
-          snd <$> TransferOrder.createTransferOrder accountOwner fromAccount toAccount amount description
+          (_, account) <- fetchByKey @Account.Model (master, accountId)
+          snd <$> TransferOrder.createTransferOrder accountOwner account toAccount amount description

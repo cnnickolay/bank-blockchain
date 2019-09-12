@@ -12,12 +12,14 @@ type C = ContractId Model
 template Model
   with
     owner: Party
+    accountOwner: Party
     name: Text
     accountNumber: Text
     amount: Decimal
     bankId: Bank.K
   where
     signatory owner
+    observer accountOwner
     key (owner, (accountNumber, bankId)) : (Party, K)
     maintainer key._1
 

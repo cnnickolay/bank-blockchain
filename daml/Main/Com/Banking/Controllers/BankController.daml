@@ -27,6 +27,6 @@ template Controller
           accountNumber : Text
           initialAmount : Decimal
         do
-          account <- Account.createAccount bankOwner name accountNumber initialAmount bankId
+          account <- Account.createAccount bankOwner accountOwner name accountNumber initialAmount bankId
           accountController <- create $ Account.Controller bankOwner accountOwner $ id account
           pure (account, accountController)

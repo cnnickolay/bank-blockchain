@@ -24,10 +24,11 @@ data AccountCreate = AccountCreate with
 
 findAccount = Account.findAccount
 
-createAccount : Party -> Text -> Text -> Decimal -> Bank.K -> Update Account.T
-createAccount master name accountNumber initialAmount bankId = do
+createAccount : Party -> Party -> Text -> Text -> Decimal -> Bank.K -> Update Account.T
+createAccount master accountOwner name accountNumber initialAmount bankId = do
     let account = Account.Model with
           owner = master
+          accountOwner
           name = name
           accountNumber = accountNumber
           amount = initialAmount
