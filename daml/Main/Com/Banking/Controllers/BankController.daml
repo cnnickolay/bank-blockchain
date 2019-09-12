@@ -8,8 +8,7 @@ import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Controllers.AccountController qualified as Account
 import Main.Com.Banking.Index.Model
 
-
-template BankController
+template Controller
   with
     master: Party
     bankOwner: Party
@@ -21,13 +20,13 @@ template BankController
     maintainer key._1
 
     controller bankOwner can
-      nonconsuming CreateAccont : Account.T
+      nonconsuming CreateAccount : (Account.T, ContractId Account.Controller)
         with
           accountOwner : Party
           name : Text
           accountNumber : Text
           initialAmount : Decimal
         do
-          account <- Account.createAccount master name accountNumber initialAmount bankId
-          create $ Account.AccountController master accountOwner $ id account
-          pure account
+          account <- Account.createAccount bankOwner name accountNumber initialAmount bankId
+          accountController <- create $ Account.Controller bankOwner accountOwner $ id account
+          pure (account, accountController)

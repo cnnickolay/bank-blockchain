@@ -7,28 +7,28 @@ import Main.Com.Banking.Business.Bank.Service qualified as Bank
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Index.Model
 
-template RootController
+template Controller
   with
     master: Party
   where
     signatory master
 
     controller master can
-      CreateBank : Bank.T
+      CreateBank : (Bank.T, ContractId Bank.Controller)
         with
           bankOwner : Party
           name : Text
           bic : Bank.K
         do
           bank <- Bank.createBank master name bic
-          create Bank.BankController with master, bankOwner, bankId = id bank
-          pure bank
+          bankController <- create Bank.Controller with master, bankOwner, bankId = id bank
+          pure (bank, bankController)
 
       DeleteBank : ()
         with
           bic : Bank.K
         do
-          controller_ <- fst <$> fetchByKey @Bank.BankController (master, bic)
+          controller_ <- fst <$> fetchByKey @Bank.Controller (master, bic)
           archive controller_
           Bank.deleteBank master bic
           pure ()

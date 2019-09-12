@@ -3,8 +3,10 @@ daml 1.2
 module Main.Com.Banking.Controllers.AccountController where
 
 import Main.Com.Banking.Business.Account.Model qualified as Account
+import Main.Com.Banking.Business.TransferOrder.Model qualified as TransferOrder
+import Main.Com.Banking.Business.TransferOrder.Service qualified as TransferOrder
 
-template AccountController
+template Controller
   with
     master: Party
     accountOwner: Party
@@ -15,6 +17,12 @@ template AccountController
     key (master, accountId) : (Party, Account.K)
     maintainer key._1
 
-    -- controller accountOwner can
-    --   nonconsuming TransferOrder : Update (ContractId TransferOrder.T)
-    --     do
+    controller accountOwner can
+      nonconsuming CreateTransferOrder : TransferOrder.T
+        with
+          fromAccount: Account.K
+          toAccount: Account.K
+          amount: Decimal
+          description: Text
+        do
+          snd <$> TransferOrder.createTransferOrder accountOwner fromAccount toAccount amount description
