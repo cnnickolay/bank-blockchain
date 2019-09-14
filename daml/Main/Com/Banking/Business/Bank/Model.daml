@@ -20,4 +20,4 @@ template Model
 
 instance IndexKeyConverter Model K
 
-template instance RecordBank = Record K
+template instance IndexBank = Index K

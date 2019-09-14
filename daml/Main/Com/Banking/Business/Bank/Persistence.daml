@@ -6,10 +6,10 @@ import Main.Com.Banking.Index.Model
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Utils.Persistence
 
-allBanksIndex = (Bank, [(All, "")])
+allBanksIndex = [(All, "")]
 
 instance IndexedFields Bank.T where
-    indexes bank = [(Bank, [(All, "")])]
+    indexes bank = [allBanksIndex]
 
 findAllBanks : Party -> Update [(ContractId Bank.T, Bank.T)]
 findAllBanks = findInIndexAndFetch allBanksIndex

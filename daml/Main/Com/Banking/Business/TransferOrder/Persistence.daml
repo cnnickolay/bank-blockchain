@@ -8,19 +8,23 @@ import Main.Com.Banking.Index.Model
 import Main.Com.Banking.Utils.Persistence
 
 instance IndexedFields TransferOrder.T where
-    indexes TransferOrder.Model{fromAccount=(accNum, bic), state} = [orders (accNum, bic) state]
+    indexes TransferOrder.Model{fromAccount=(accNum, bic), state} =
+      [ accountBankStateIdx (accNum, bic) state
+      , bankStateIdx bic state
+      ]
 
-orders (accNum, bic) state = (TransferOrder, [(AccountNumber, accNum), (BankId, bic), (TransferOrderState, conv state)])
-  where
-    conv TransferOrder.Active = "Active"
-    conv TransferOrder.Cancelled = "Cancelled"
-    conv TransferOrder.Executed = "Executed"
+accountBankStateIdx (accNum, bic) state = [(AccountNumber, accNum), (BankId, bic), (TransferOrderState, conv state)]
+bankStateIdx bic state = [(BankId, bic), (TransferOrderState, conv state)]
 
-findActiveOrders : Party -> Account.K -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
-findActiveOrders party accountId = findInIndexAndFetch (orders accountId TransferOrder.Active) party
+conv TransferOrder.Active = "Active"
+conv TransferOrder.Cancelled = "Cancelled"
+conv TransferOrder.Executed = "Executed"
 
-findExecutedOrders : Party -> Account.K -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
-findExecutedOrders party accountId = findInIndexAndFetch (orders accountId TransferOrder.Executed) party
+findActiveOrdersByAccount : Party -> Account.K -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
+findActiveOrdersByAccount party accountId = findInIndexAndFetch (accountBankStateIdx accountId TransferOrder.Active) party
+
+findExecutedOrdersByAccount : Party -> Account.K -> Update [(ContractId TransferOrder.T, TransferOrder.T)]
+findExecutedOrdersByAccount party accountId = findInIndexAndFetch (accountBankStateIdx accountId TransferOrder.Executed) party
 
 saveOrder : Party -> TransferOrder.T -> Update (ContractId TransferOrder.T)
 saveOrder = save_

@@ -16,6 +16,7 @@ data State
 
 template Model
   with
+    bankOwner: Party
     accountOwner: Party
     idx: Int
     fromAccount: Account.K
@@ -24,11 +25,11 @@ template Model
     description: Text
     state: State
   where
-    signatory accountOwner
+    signatory bankOwner, accountOwner
     ensure amount > 0.0
     key (accountOwner, (idx, fromAccount)) : (Party, K)
     maintainer key._1
 
 instance IndexKeyConverter Model K
 
-template instance RecordTransferOrder = Record K
+template instance IndexTransferOrder = Index K

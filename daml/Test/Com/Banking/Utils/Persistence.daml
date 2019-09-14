@@ -21,7 +21,7 @@ template TestTemplate
 
 instance IndexKeyConverter TestTemplate Text
 
-template instance RecordTestTemplate = Record Text
+template instance IndexTestTemplate = Index Text
 
 saveTest : Scenario ()
 saveTest = do
@@ -29,9 +29,9 @@ saveTest = do
     let
         a = TestTemplate with party, id = "0", name = "niko", lastname = "che", amount = 0.0
         findByName : Text -> Update [TestTemplate]
-        findByName name = snd <<$>> (Persistence.findInIndexAndFetch (Bank, [(Name, name)]) party)
+        findByName name = snd <<$>> (Persistence.findInIndexAndFetch [(Name, name)] party)
         findByNameAndLastName : Text -> Text -> Update [TestTemplate]
-        findByNameAndLastName name lastname = snd <<$>> Persistence.findInIndexAndFetch (Bank, [(Name, name), (LastName, lastname)]) party
+        findByNameAndLastName name lastname = snd <<$>> Persistence.findInIndexAndFetch [(Name, name), (LastName, lastname)] party
         tests = [
                     ("0", "niko", "che", 0.0)
                   , ("1", "niko", "che", 0.0)
@@ -54,8 +54,8 @@ deleteTest = do
 instance IndexedFields TestTemplate where
     indexes a =
         [
-            ( Bank, [ (All, "") ] )
-          , ( Bank, [ (Name, a.name) ] )
-          , ( Bank, [ (LastName, a.lastname) ] )
-          , ( Bank, [ (Name, a.name), (LastName, a.lastname) ] )
+            [ (All, "") ]
+          , [ (Name, a.name) ]
+          , [ (LastName, a.lastname) ]
+          , [ (Name, a.name), (LastName, a.lastname) ]
         ]

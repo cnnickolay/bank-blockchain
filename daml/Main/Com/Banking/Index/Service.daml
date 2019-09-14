@@ -6,45 +6,53 @@ module Main.Com.Banking.Index.Service where
 
 import Main.Com.Banking.Index.Model
 import DA.List (delete)
+import Main.Com.Banking.Utils.Logger qualified as Logger
 
-findInIndex : forall model id. (RecordInstance id, IndexKeyConverter model id)
-                => Party -> IndexKey -> Update (Optional (ContractId (Record id), Record id, [id]))
+findInIndex : forall id model. (IndexInstance id, IndexKeyConverter model id) => Party -> IndexKey -> Update [id]
 findInIndex owner key_ = do
-    contractId <- lookupByKey @(Record id) (owner, key_)
+    indexO: Optional (ContractId (Index id), Index id) <- findIndex owner key_
+    case indexO of
+        None -> do
+            Logger.log owner $ "No index found: " <> show key_
+            pure []
+        Some (_, index) -> do
+            Logger.log owner $ "Index found: " <> show key_
+            pure index.values
+
+findIndex : forall id. IndexInstance id => Party -> IndexKey -> Update (Optional (ContractId (Index id), Index id))
+findIndex owner key_ = do
+    contractId <- lookupByKey @(Index id) (owner, key_)
     case contractId of
         None -> pure None
         Some id -> do
             contract <- fetch id
-            let values = contract.values
-            pure $ Some (id, contract, values)
+            pure $ Some (id, contract)
 
-storeInIndex : forall model id. (RecordInstance id, IndexKeyConverter model id, Eq id)
-                => Party -> IndexKey -> id -> Update (ContractId (Record id), Record id)
-storeInIndex owner key_ value = do
-    record <- findInIndex owner key_
-    case record of
-        None -> saveRecord [value]
-                >>= (\cId -> (cId, ) <$> fetch cId)
-        Some (recordId, record, values) | elem value values -> pure (recordId, record)
-        Some (recordId, record, _) ->
-            archive recordId
-            >> saveRecord (record.values ++ [value])
-            >>= (\cId -> (cId, ) <$> fetch cId)
+storeInIndex : (IndexInstance id, TemplateKey model (Party, id), IndexKeyConverter model id, Eq id)
+                => Party -> [Party] -> IndexKey -> id -> Update (Optional (ContractId (Index id), Index id))
+storeInIndex keyMaintainer owners key_ value = do
+    indexO <- findIndex keyMaintainer key_
+    case indexO of
+        None -> saveIndex [value] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
+        Some (indexId, index) | elem value index.values -> (pure . Some $ (indexId, index))
+        Some (indexId, index) ->
+            archive indexId
+            >> saveIndex (index.values ++ [value])
+            >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
   where
-    saveRecord values = create Record with owner, key_, values = values
+    saveIndex values = create Index with keyMaintainer, owners, key_, values = values
 
-dropFromIndex : forall model id. (RecordInstance id, IndexKeyConverter model id, Eq id)
-                => Party -> IndexKey -> id -> Update (Optional (ContractId (Record id), Record id))
-dropFromIndex owner key_ value = do
-    record <- findInIndex owner key_
-    case record of
+dropFromIndex : (IndexInstance id, IndexKeyConverter m id, Eq id) => Party -> id -> IndexKey -> Update (Optional (ContractId (Index id), Index id))
+dropFromIndex keyMaintainer value key_ = do
+    indexO <- findIndex keyMaintainer key_
+    case indexO of
         None -> pure None
-        Some (recordId, record, [onlyValue]) | onlyValue == value -> archive recordId *> pure None
-        Some (recordId, record, values) | elem value values ->
-            Some <$>    ( archive recordId
-                            >> saveRecord (delete value record.values)
+        Some (indexId, index) | [v] <- index.values, v == value -> archive indexId *> pure None
+        Some (indexId, index) | elem value index.values ->
+            Some <$>    ( archive indexId
+                            >> saveIndex index.owners (delete value index.values)
                             >>= (\cId -> (cId, ) <$> fetch cId)
                         )
-        Some (recordId, record, _) -> pure . Some $ (recordId, record)
+        Some (indexId, index) -> pure . Some $ (indexId, index)
   where
-    saveRecord values = create Record with owner, key_, values = values
+    saveIndex owners values = create Index with keyMaintainer, owners, key_, values = values

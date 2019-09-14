@@ -23,13 +23,13 @@ accountCreationTest = do
         pure (bank1, bankA)
 
     (account1, account2) <- submit bank1Owner do
-        Account.AccountCreated account1 <- Account.createAccount bank1Owner $ Account.AccountCreate account1Owner "account1" "111111" 10.0 bank1.bic
-        Account.AccountCreated account2 <- Account.createAccount bank1Owner $ Account.AccountCreate account2Owner "account2" "222222" 100.0 bank1.bic
+        account1 <- Account.createAccount bank1Owner account1Owner "account1" "111111" 10.0 bank1.bic
+        account2 <- Account.createAccount bank1Owner account2Owner "account2" "222222" 100.0 bank1.bic
         pure (account1, account2)
 
     (accountA, accountB) <- submit bankAOwner do
-        Account.AccountCreated accountA <- Account.createAccount bankAOwner $ Account.AccountCreate accountAOwner "accountA" "AAAAAA" 5.0 bankA.bic
-        Account.AccountCreated accountB <- Account.createAccount bankAOwner $ Account.AccountCreate accountBOwner "accountB" "BBBBBB" 50.0 bankA.bic
+        accountA <- Account.createAccount bankAOwner accountAOwner "accountA" "AAAAAA" 5.0 bankA.bic
+        accountB <- Account.createAccount bankAOwner accountBOwner "accountB" "BBBBBB" 50.0 bankA.bic
         pure (accountA, accountB)
 
     submit bank1Owner do

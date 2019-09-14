@@ -30,7 +30,7 @@ shouldNotBeAbleToDeleteBankIfAccountExists = do
     -- bank creation
     submit master do
         bank <- Bank.createBank master "test bank" "bic"
-        Account.AccountCreated account <- Account.createAccount master $ Account.AccountCreate master "account" "1111111" 5.0 bank.bic
+        account <- Account.createAccount master master "account" "1111111" 5.0 bank.bic
         [account] === (snd <<$>> Account.findAccountsByBank master "bic")
 
     -- can't delete bank if accounts exist

@@ -5,13 +5,7 @@ daml 1.2
 
 module Main.Com.Banking.Index.Model where
 
-type IndexKey = (Table, [(Field, Text)])
-
-data Table
-  = Bank
-  | Account
-  | TransferOrder
-    deriving (Eq, Show)
+type IndexKey = [(Field, Text)]
 
 data Field
   = All
@@ -29,13 +23,13 @@ class (Eq id, Template model, TemplateKey model (Party, id)) => IndexKeyConverte
 class IndexedFields a where
     indexes : a -> [IndexKey]
 
-template Record id
+template Index id
   with
-    owner: Party
+    keyMaintainer: Party
+    owners: [Party]
     key_: IndexKey
     values: [id]
   where
-    signatory owner
-
-    key (owner, key_): (Party, IndexKey)
+    signatory owners
+    key (keyMaintainer, key_): (Party, IndexKey)
     maintainer key._1

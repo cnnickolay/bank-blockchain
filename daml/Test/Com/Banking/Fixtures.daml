@@ -16,8 +16,8 @@ createData = do
         Bank.createBank master "bank1" "0000000"
 
     (account1, account2) <- submit bankOwner do
-        Account.AccountCreated account1 <- Account.createAccount bankOwner $ Account.AccountCreate account1Owner "account1" "111111" 10.0 bank.bic
-        Account.AccountCreated account2 <- Account.createAccount bankOwner $ Account.AccountCreate account2Owner "account2" "222222" 10.0 bank.bic
+        account1 <- Account.createAccount bankOwner account1Owner "account1" "111111" 10.0 bank.bic
+        account2 <- Account.createAccount bankOwner account2Owner "account2" "222222" 10.0 bank.bic
         pure (account1, account2)
 
     pure (bank, (account1, account2))

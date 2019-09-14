@@ -7,10 +7,10 @@ import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Utils.Persistence
 
-allIndex = (Index.Account, [(Index.All, "")])
+allIndex = [(Index.All, "")]
 
 instance Index.IndexedFields Account.T where
-    indexes account = [allIndex, (Index.Account, [(Index.BankId, account.bankId)])]
+    indexes account = [allIndex, [(Index.BankId, account.bankId)]]
 
 findAll : Party -> Update [(ContractId Account.T, Account.T)]
 findAll = findInIndexAndFetch allIndex
@@ -22,7 +22,7 @@ dropBank : Party -> Account.T -> Update ()
 dropBank = drop_
 
 findAccountsByBank : Party -> Bank.K -> Update [(ContractId Account.T, Account.T)]
-findAccountsByBank party bankId = findInIndexAndFetch (Index.Account, [(Index.BankId, bankId)]) party
+findAccountsByBank party bankId = findInIndexAndFetch [(Index.BankId, bankId)] party
 
 findAllAccounts : Party -> Update [(ContractId Account.T, Account.T)]
 findAllAccounts = findInIndexAndFetch allIndex

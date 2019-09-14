@@ -14,7 +14,7 @@ template Controller
     signatory master
 
     controller master can
-      CreateBank : (Bank.T, ContractId Bank.Controller)
+      nonconsuming CreateBank : (Bank.T, ContractId Bank.Controller)
         with
           bankOwner : Party
           name : Text
@@ -24,7 +24,7 @@ template Controller
           bankController <- create Bank.Controller with master, bankOwner, bankId = id bank
           pure (bank, bankController)
 
-      DeleteBank : ()
+      nonconsuming DeleteBank : ()
         with
           bic : Bank.K
         do

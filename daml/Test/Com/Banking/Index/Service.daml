@@ -3,11 +3,11 @@ daml 1.2
 module Test.Com.Banking.Index.Service where
 
 import Main.Com.Banking.Index.Service
-import DA.Tuple (thd3)
 import Test.Com.Banking.Utils.TestUtils
 import Main.Com.Banking.Index.Model
 
-template TestTemplate
+
+template TestTemplate1
   with
     owner : Party
     k : Text
@@ -16,58 +16,71 @@ template TestTemplate
     key (owner, k) : (Party, Text)
     maintainer key._1
 
-instance IndexKeyConverter TestTemplate Text
+template TestTemplate2
+  with
+    owner : Party
+    k : Int
+  where
+    signatory owner
+    key (owner, k) : (Party, Int)
+    maintainer key._1
+
+instance IndexKeyConverter TestTemplate1 Text
+instance IndexKeyConverter TestTemplate2 Int
+
+template instance IndexTestTemplate1 = Index Text
+template instance IndexTestTemplate2 = Index Int
 
 findTest : Scenario ()
 findTest = do
     party <- getParty "Party"
 
-    let myKey1 = (Bank, [(All, "")])
-        myKey2 = (Account, [(All, "")])
+    let allEntries = [(All, "")]
 
     submit party do
         -- |||| Testing index 1
         -- Index is empty
-        None === find_ party myKey1
+        [] === findIn1 party allEntries
 
         -- Adding an element to an empty index
-        storeInIndex party myKey1 "11"
-        Some ["11"] === find_ party myKey1
+        storeInIndex party [party] allEntries "11"
+        ["11"] === findIn1 party allEntries
 
         -- Adding same key won't change index
-        storeInIndex party myKey1 "11"
-        Some ["11"] === (find_ party myKey1)
+        storeInIndex party [party] allEntries "11"
+        ["11"] === (findIn1 party allEntries)
 
         -- Adding another key to an existing index
-        storeInIndex party myKey1 "22"
-        Some ["11", "22"] === find_ party myKey1
-        --------------------------------------------
+        storeInIndex party [party]allEntries "22"
+        ["11", "22"] === findIn1 party allEntries
+        -- --------------------------------------------
 
         -- |||| Testing index 2
         -- Index is empty
-        None === find_ party myKey2
+        [] === findIn2 party allEntries
 
         -- Adding an element to an empty index
-        storeInIndex party myKey2 "11"
-        Some ["11"] === find_ party myKey2
+        storeInIndex party [party] allEntries 11
+        [11] === findIn2 party allEntries
 
         -- Adding same key won't change index
-        storeInIndex party myKey2 "11"
-        Some ["11"] === find_ party myKey2
+        storeInIndex party [party] allEntries 11
+        [11] === findIn2 party allEntries
 
-        -- Adding another key to an existing index
-        storeInIndex party myKey2 "22"
-        Some ["11", "22"] === find_ party myKey2
-        --------------------------------------------
+        -- -- Adding another key to an existing index
+        storeInIndex party [party] allEntries 22
+        [11, 22] === findIn2 party allEntries
+        -- --------------------------------------------
 
-        -- |||| Deleting from index
-        dropFromIndex party myKey1 "11"
-        Some ["22"] === find_ party myKey1
+        -- -- |||| Deleting from index
+        dropFromIndex party 11 allEntries
+        [22] === findIn2 party allEntries
 
-        dropFromIndex party myKey1 "22"
-        None === find_ party myKey1
+        dropFromIndex party 22 allEntries
+        [] === findIn2 party allEntries
 
-template instance RecordText = Record Text
+findIn1 : Party -> IndexKey -> Update [Text]
+findIn1 party a = findInIndex party a
 
-find_ : Party -> IndexKey -> Update (Optional [Text])
-find_ party a = fmap thd3 <$> findInIndex party a
+findIn2 : Party -> IndexKey -> Update [Int]
+findIn2 party a = findInIndex party a
