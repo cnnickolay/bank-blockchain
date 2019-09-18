@@ -29,9 +29,9 @@ findIndex owner key_ = do
             pure $ Some (id, contract)
 
 storeInIndex : (IndexInstance id, TemplateKey model (Party, id), IndexKeyConverter model id, Eq id)
-                => Party -> [Party] -> IndexKey -> id -> Update (Optional (ContractId (Index id), Index id))
-storeInIndex keyMaintainer owners key_ value = do
-    indexO <- findIndex keyMaintainer key_
+                => Party -> IndexKey -> id -> Update (Optional (ContractId (Index id), Index id))
+storeInIndex owner key_ value = do
+    indexO <- findIndex owner key_
     case indexO of
         None -> saveIndex [value] >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
         Some (indexId, index) | elem value index.values -> (pure . Some $ (indexId, index))
@@ -40,19 +40,19 @@ storeInIndex keyMaintainer owners key_ value = do
             >> saveIndex (index.values ++ [value])
             >>= (\cId -> (cId, ) <$> fetch cId) >>= pure . Some
   where
-    saveIndex values = create Index with keyMaintainer, owners, key_, values = values
+    saveIndex values = create Index with owner, key_, values = values
 
 dropFromIndex : (IndexInstance id, IndexKeyConverter m id, Eq id) => Party -> id -> IndexKey -> Update (Optional (ContractId (Index id), Index id))
-dropFromIndex keyMaintainer value key_ = do
-    indexO <- findIndex keyMaintainer key_
+dropFromIndex owner value key_ = do
+    indexO <- findIndex owner key_
     case indexO of
         None -> pure None
         Some (indexId, index) | [v] <- index.values, v == value -> archive indexId *> pure None
         Some (indexId, index) | elem value index.values ->
             Some <$>    ( archive indexId
-                            >> saveIndex index.owners (delete value index.values)
+                            >> saveIndex owner (delete value index.values)
                             >>= (\cId -> (cId, ) <$> fetch cId)
                         )
         Some (indexId, index) -> pure . Some $ (indexId, index)
   where
-    saveIndex owners values = create Index with keyMaintainer, owners, key_, values = values
+    saveIndex owners values = create Index with owner, key_, values = values

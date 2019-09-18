@@ -11,16 +11,16 @@ type C = ContractId Model
 
 template Model
   with
-    owner: Party
+    bankOwner: Party
     accountOwner: Party
     name: Text
     accountNumber: Text
     amount: Decimal
     bankId: Bank.K
   where
-    signatory owner
+    signatory bankOwner
     observer accountOwner
-    key (owner, (accountNumber, bankId)) : (Party, K)
+    key (bankOwner, (accountNumber, bankId)) : (Party, K)
     maintainer key._1
 
 instance IndexKeyConverter T K

@@ -5,10 +5,10 @@ module Main.Com.Banking.Controllers.BankController where
 import Main.Com.Banking.Business.Account.Service qualified as Account
 import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Business.TransferOrder.Model qualified as TransferOrder
-import Main.Com.Banking.Business.Bank.Service qualified as Bank
 import Main.Com.Banking.Business.Bank.Model qualified as Bank
 import Main.Com.Banking.Controllers.AccountController qualified as Account
 import Main.Com.Banking.Index.Model
+import Main.Com.Banking.Utils.Logger
 
 template Controller
   with
@@ -36,4 +36,11 @@ template Controller
 
       nonconsuming SettlePendingTransferOrders : [TransferOrder.T]
         do
-          Bank.settlePendingTransferOrders bankOwner bankId
+          let executeTransferOrders account = do
+                  controller_ <- fst <$> fetchByKey @Account.Controller (bankOwner, id account)
+                  executedOrders <- exercise controller_ Account.ExecuteTransferOrders
+                  pure executedOrders
+          accounts <- fmap snd <$> Account.findAllAccounts bankOwner
+          mapA (log master . (\(a, b) -> "Found account: " <> a <> ", " <> b) . id) accounts
+          executedOrders <- concat <$> mapA executeTransferOrders accounts
+          pure []--executedOrders

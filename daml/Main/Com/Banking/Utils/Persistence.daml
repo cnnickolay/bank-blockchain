@@ -10,7 +10,7 @@ import Main.Com.Banking.Index.Service
 
 save_ : (IndexInstance id, IndexedFields model, Eq id, IndexKeyConverter model id) => Party -> model -> Update (ContractId model)
 save_ owner a = do
-    mapA (\index -> storeInIndex owner (signatory a) index (id a)) indexes_
+    mapA (\index -> storeInIndex owner index (id a)) indexes_
     create a
   where
     indexes_ = indexes a

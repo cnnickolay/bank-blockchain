@@ -1,0 +1,56 @@
+daml 1.2
+
+module Test.Com.Banking.T1 where
+
+template Temp1
+  with
+    owner1 : Party
+    owner2 : Party
+    i : Int
+  where
+    signatory owner1
+
+    controller owner2 can
+      nonconsuming A : ()
+        do
+          create $ Temp2 owner1 [owner1, owner2] i
+          create $ Temp2 owner2 [owner1, owner2] i
+          pure ()
+
+      nonconsuming B : ()
+        do
+          (cc1, _) <- fetchByKey @Temp2 (owner1, 1)
+          (cc2, _) <- fetchByKey @Temp2 (owner2, 1)
+          archive cc1
+          archive cc2
+
+template Temp2
+  with
+    maintainer_ : Party
+    owners : [Party]
+    i : Int
+  where
+    signatory owners
+
+    key (maintainer_, i) : (Party, Int)
+    maintainer key._1
+
+
+test : Scenario ()
+test = do
+    owner1 <- getParty "owner1"
+    owner2 <- getParty "owner2"
+    c1 <- submit owner1 do create $ Temp1 with owner1, owner2, i = 1
+    submit owner2 do exercise c1 A
+
+    owner1 `submit` do
+      lookupByKey @Temp2 (owner1, 1)
+
+    owner2 `submit` do
+      lookupByKey @Temp2 (owner2, 1)
+
+    owner2 `submitMustFail` lookupByKey @Temp2 (owner1, 1)
+
+    owner2 `submit` do exercise c1 $ B
+
+    pure ()

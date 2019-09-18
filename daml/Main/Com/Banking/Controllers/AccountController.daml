@@ -5,17 +5,19 @@ module Main.Com.Banking.Controllers.AccountController where
 import Main.Com.Banking.Business.Account.Model qualified as Account
 import Main.Com.Banking.Business.TransferOrder.Model qualified as TransferOrder
 import Main.Com.Banking.Business.TransferOrder.Service qualified as TransferOrder
+import Main.Com.Banking.Index.Model
+import Main.Com.Banking.Utils.Logger
 
 template Controller
   with
-    master: Party
+    bankOwner: Party
     accountOwner: Party
     accountId: Account.K
   where
-    signatory master
+    signatory bankOwner
     observer accountOwner
 
-    key (master, accountId) : (Party, Account.K)
+    key (bankOwner, accountId) : (Party, Account.K)
     maintainer key._1
 
     controller accountOwner can
@@ -25,5 +27,13 @@ template Controller
           amount: Decimal
           description: Text
         do
-          (_, account) <- fetchByKey @Account.Model (master, accountId)
+          (_, account) <- fetchByKey @Account.Model (bankOwner, accountId)
           snd <$> TransferOrder.createTransferOrder accountOwner account toAccount amount description
+
+    controller bankOwner can
+      nonconsuming ExecuteTransferOrders : [TransferOrder.T]
+        do
+          log bankOwner $ "partyy " <> show accountOwner
+          activeOrders <- fmap (id . snd) <$> TransferOrder.findActiveOrdersByAccount bankOwner accountId
+          mapA (TransferOrder.executeOrder bankOwner) activeOrders
+          pure []

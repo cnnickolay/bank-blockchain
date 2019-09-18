@@ -25,9 +25,10 @@ template Model
     description: Text
     state: State
   where
-    signatory bankOwner, accountOwner
+    signatory bankOwner
+    observer accountOwner
     ensure amount > 0.0
-    key (accountOwner, (idx, fromAccount)) : (Party, K)
+    key (bankOwner, (idx, fromAccount)) : (Party, K)
     maintainer key._1
 
 instance IndexKeyConverter Model K

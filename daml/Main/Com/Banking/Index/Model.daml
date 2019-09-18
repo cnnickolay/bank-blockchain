@@ -25,11 +25,10 @@ class IndexedFields a where
 
 template Index id
   with
-    keyMaintainer: Party
-    owners: [Party]
+    owner: Party
     key_: IndexKey
     values: [id]
   where
-    signatory owners
-    key (keyMaintainer, key_): (Party, IndexKey)
+    signatory owner
+    key (owner, key_): (Party, IndexKey)
     maintainer key._1

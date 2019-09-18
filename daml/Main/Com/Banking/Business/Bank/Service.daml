@@ -29,14 +29,14 @@ deleteBank creator bic = do
 
 findAllBanks = Bank.findAllBanks
 
-settlePendingTransferOrders : Party -> Bank.K -> Update [TransferOrder.T]
-settlePendingTransferOrders party bank = do
-    accounts <- fmap ((\acct -> (acct.accountOwner, id acct)) . snd) <$> Account.findAccountsByBank party bank
-    transferOrders <- concat <$> mapA (uncurry TransferOrder.findActiveOrdersByAccount) accounts
-    -- log party $ "Total active orders: " <> show (length transferOrders)
-    log party $ "Party is: " <> show party
-    pure []
---     accountPartiesAndOrders <- mapA accountParty activeOrders
---     mapA (uncurry TransferOrder.executeOrder) accountPartiesAndOrders
+-- settlePendingTransferOrders : Party -> Bank.K -> Update [TransferOrder.T]
+-- settlePendingTransferOrders party bank = do
+--     accounts <- fmap ((\acct -> (acct.accountOwner, id acct)) . snd) <$> Account.findAccountsByBank party bank
+--     transferOrders <- concat <$> mapA (uncurry TransferOrder.findActiveOrdersByAccount) accounts
+--     -- log party $ "Total active orders: " <> show (length transferOrders)
+--     log party $ "Party is: " <> show party
+--     -- pure []
+--     accountPartiesAndOrders <- mapA accountParty transferOrders
+--     mapA (uncurry TransferOrder.executeOrder ) accountPartiesAndOrders
 --   where
 --     accountParty order = ((,id order) . (.accountOwner) . snd) <$> (Account.findAccount party order.fromAccount)

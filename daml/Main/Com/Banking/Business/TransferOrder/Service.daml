@@ -12,12 +12,12 @@ import Main.Com.Banking.Index.Model
 
 createTransferOrder : Party -> Account.T -> Account.K -> Decimal -> Text -> Update (ContractId TransferOrder.T, TransferOrder.T)
 createTransferOrder party fromAccount toAccountId amount description = do
-    availableBalance <- availableBalance party fromAccount
+    let bankOwner = fromAccount.bankOwner
+    availableBalance <- availableBalance bankOwner fromAccount
     unless (availableBalance >= amount) $ abort "Insufficient balance"
-    totalPendingOrders <- length <$> TransferOrder.findActiveOrdersByAccount party (id fromAccount)
-    nextId <- Seq.nextNumber party Seq.TransferOrder
-    let order = TransferOrder.Model fromAccount.owner party nextId (id fromAccount) toAccountId amount description TransferOrder.Active
-    (,order) <$> TransferOrder.saveOrder party order
+    nextId <- Seq.nextNumber bankOwner Seq.TransferOrder
+    let order = TransferOrder.Model bankOwner party nextId (id fromAccount) toAccountId amount description TransferOrder.Active
+    (,order) <$> TransferOrder.saveOrder bankOwner order
 
 availableBalance : Party -> Account.T -> Update Decimal
 availableBalance owner account = do
